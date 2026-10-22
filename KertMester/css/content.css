@@ -1,0 +1,8 @@
+.content-placeholder {
+  width: 100%;
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 4rem 1.25rem;
+  font-family: Georgia, serif;
+  font-style: italic;
+}

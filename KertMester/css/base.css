@@ -1,0 +1,71 @@
+:root {
+  --forest: #24392C;
+  --forest-dark: #182619;
+  --moss: #6E8B5E;
+  --sage-line: #46603F;
+  --butter: #F4E8BE;
+  --cream: #FBF6E7;
+  --ink: #1E2A1B;
+  --gold: #C69A3C;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: Arial, sans-serif;
+}
+
+main {
+  flex: 1;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.logo-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.logo-img--ghost {
+  opacity: 0.1;
+}
+
+::-webkit-scrollbar {
+  width: 15px;
+  background-color: var(--forest-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--butter);
+  border-radius: 10px;
+  border: var(--moss) 1.5px solid;
+}
+
+@media (min-width: 1800px) {
+  html {
+    font-size: 22px;
+  }
+}
+
+@media (min-width: 2500px) {
+  html {
+    font-size: 30px;
+  }
+}
