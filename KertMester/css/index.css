@@ -1,0 +1,28 @@
+.shop {
+  width: 100%;
+  max-width: 120rem;
+  height: calc(100vh - 5.5rem);
+  min-height: 35rem;
+  margin: 0 auto;
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: 15rem 1fr 18rem;
+  gap: 1rem;
+}
+
+@media (max-width: 1000px) {
+  .shop {
+    height: auto;
+    min-height: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .shop-offers,
+  .shop-cart {
+    min-height: 8rem;
+  }
+
+  .shop-items {
+    min-height: 25rem;
+  }
+}

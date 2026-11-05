@@ -15,6 +15,104 @@
   grid-row: 1 / 3;
 }
 
+.toolbar {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  border: 1px solid var(--sage-line);
+  padding: 10px 20px;
+  margin-top: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+.tool-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+}
+
+input[type="color"] {
+  border: none;
+  border: 1px solid;
+  cursor: pointer;
+}
+
+button {
+  background-color: #ff4757;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background-color: #e84118;
+}
+
+.canvas-container {
+  height: 90%;
+  width: 100%;
+  background: var(--cream);
+  border-radius: 12px;
+  margin-top: 5px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--sage-line);
+}
+
+canvas {
+  display: block;
+  cursor: crosshair;
+}
+
+#drawboard {
+  height: 100%;
+  width: 100%;
+}
+
+.tool-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border-right: 1.5px solid var(--gold);
+  padding-right: 12px;
+}
+
+.tool-group:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.btn-tool {
+  color: white;
+  background: var(--moss);
+  border: 2px solid transparent;
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-tool:hover {
+  background: var(--ink);
+  color: var(--gold);
+}
+
+.btn-tool.active {
+  background: var(--forest-dark);
+  color: white;
+  border-color: var(--gold);
+}
+
 @media (max-width: 800px) {
   .planner {
     height: auto;

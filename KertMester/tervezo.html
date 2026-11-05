@@ -11,7 +11,8 @@
   <link rel="stylesheet" href="css/panel.css">
   <link rel="stylesheet" href="css/tervezo.css">
   <link rel="stylesheet" href="css/footer.css">
-  <link rel="icon" type="image/png" href="imgs/icon.png"/>
+  <link rel="icon" type="image/png" href="imgs/icon.png" />
+  <script src="js/tervezo.js" defer></script>
 </head>
 
 <body>
@@ -53,7 +54,7 @@
     </ol>
 
     <div class="nav-foliage" aria-hidden="true">
-        <img class="logo-img logo-img--ghost" src="imgs/icon.png" alt="Logo">
+      <img class="logo-img logo-img--ghost" src="imgs/icon.png" alt="Logo">
     </div>
   </nav>
 
@@ -63,11 +64,38 @@
     </aside>
 
     <section class="panel planner-menu">
+      
       <h2 class="panel-title">Rajzmenü</h2>
+      <div class="toolbar">
+        <div class="tool-group">
+          <input type="color" id="colorPicker" value="#000000" title="Színválasztó">
+          <input type="range" id="lineWidth" min="1" max="50" value="5" title="Vonalvastagság">
+        </div>
+
+        <div class="tool-group">
+          <button class="btn-tool active" data-tool="pen">🖋️</button>
+          <button class="btn-tool" data-tool="spray">💦</button>
+          <button class="btn-tool" data-tool="bucket">🪣</button>
+        </div>
+
+        <div class="tool-group">
+            <button class="btn-tool" data-tool="line">──</button>
+            <button class="btn-tool" data-tool="ellipse">〇</button>
+            <button class="btn-tool" data-tool="rectangle">☐</button>
+        </div>
+
+        <div class="tool-group">
+            <button id="undoBtn" class="btn-action">↩</button>
+            <button id="clearBtn" class="btn-action btn-clear">🗑</button>
+        </div>
+      </div>
     </section>
 
     <section class="panel planner-canvas">
       <h2 class="panel-title">Tervező</h2>
+      <div class="canvas-container">
+        <canvas id="drawboard"></canvas>
+      </div>
     </section>
   </main>
 
