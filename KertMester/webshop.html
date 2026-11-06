@@ -9,9 +9,14 @@
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/nav.css">
   <link rel="stylesheet" href="css/panel.css">
+  <link rel="stylesheet" href="css/product.css">
   <link rel="stylesheet" href="css/shop.css">
   <link rel="stylesheet" href="css/footer.css">
   <link rel="icon" type="image/png" href="imgs/icon.png"/>
+  <script src="js/adatok.js" defer></script>
+  <script src="js/segedek.js" defer></script>
+  <script src="js/kosar.js" defer></script>
+  <script src="js/webshop.js" defer></script>
 </head>
 
 <body>
@@ -64,10 +69,24 @@
 
     <section class="panel shop-items">
       <h2 class="panel-title">Termékek</h2>
+      <div class="shop-filters">
+        <input type="search" id="searchInput" class="shop-search" placeholder="Keresés a termékek között…" aria-label="Keresés" autocomplete="off">
+        <select id="categoryFilter" class="shop-select" aria-label="Kategória">
+          <option value="">Minden kategória</option>
+        </select>
+      </div>
+      <ul class="shop-list" id="productList"></ul>
+      <p class="shop-empty" id="emptyMessage" hidden>Nincs a keresésnek megfelelő termék.</p>
     </section>
 
     <aside class="panel shop-cart">
       <h2 class="panel-title">Kosár</h2>
+      <ul class="cart-list" id="cartList"></ul>
+      <p class="cart-empty" id="cartEmpty">A kosár üres. Húzz termékeket a tervezőbe, vagy add hozzá őket a katalógusból.</p>
+      <div class="cart-footer">
+        <span>Összesen (<span id="cartCount">0</span> db)</span>
+        <strong id="cartTotal">0 Ft</strong>
+      </div>
     </aside>
   </main>
 

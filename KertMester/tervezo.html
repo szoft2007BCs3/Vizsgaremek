@@ -9,10 +9,16 @@
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/nav.css">
   <link rel="stylesheet" href="css/panel.css">
+  <link rel="stylesheet" href="css/product.css">
   <link rel="stylesheet" href="css/tervezo.css">
   <link rel="stylesheet" href="css/footer.css">
   <link rel="icon" type="image/png" href="imgs/icon.png" />
+  <script src="js/adatok.js" defer></script>
+  <script src="js/segedek.js" defer></script>
+  <script src="js/kosar.js" defer></script>
+  <script src="js/eszkoztar.js" defer></script>
   <script src="js/tervezo.js" defer></script>
+  <script src="js/tervezo-elemek.js" defer></script>
 </head>
 
 <body>
@@ -61,40 +67,63 @@
   <main class="planner">
     <aside class="panel planner-toolbar">
       <h2 class="panel-title">Eszköztár</h2>
+      <div class="toolbox" id="toolbox"></div>
     </aside>
 
     <section class="panel planner-menu">
-      
       <h2 class="panel-title">Rajzmenü</h2>
       <div class="toolbar">
         <div class="tool-group">
-          <input type="color" id="colorPicker" value="#000000" title="Színválasztó">
-          <input type="range" id="lineWidth" min="1" max="50" value="5" title="Vonalvastagság">
+          <label class="garden-field">Hosszúság
+            <input type="number" id="gardenLength" min="1" max="100" step="0.5">
+            m
+          </label>
+          <label class="garden-field">Szélesség
+            <input type="number" id="gardenWidth" min="1" max="100" step="0.5">
+            m
+          </label>
         </div>
 
         <div class="tool-group">
-          <button class="btn-tool active" data-tool="pen">🖋️</button>
-          <button class="btn-tool" data-tool="spray">💦</button>
-          <button class="btn-tool" data-tool="bucket">🪣</button>
+          <input type="color" id="colorPicker" value="#24392C" title="Szín" aria-label="Szín">
+          <label class="size-control" title="Vonalvastagság">
+            <input type="range" id="lineWidth" min="1" max="50" value="5" aria-label="Vonalvastagság">
+            <output id="lineWidthValue">5</output>
+          </label>
         </div>
 
         <div class="tool-group">
-            <button class="btn-tool" data-tool="line">──</button>
-            <button class="btn-tool" data-tool="ellipse">〇</button>
-            <button class="btn-tool" data-tool="rectangle">☐</button>
+          <button type="button" class="btn-tool active" data-tool="pen" title="Toll"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="btn-label">Toll</span></button>
+          <button type="button" class="btn-tool" data-tool="eraser" title="Radír"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 20H9L4 15a2 2 0 0 1 0-2.8l8.2-8.2a2 2 0 0 1 2.8 0l5 5a2 2 0 0 1 0 2.8L12 20"/><path d="M7 11l6 6"/></svg><span class="btn-label">Radír</span></button>
+          <button type="button" class="btn-tool" data-tool="spray" title="Spray"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="9" height="11" rx="1.5"/><path d="M6.5 10V6.5h4V10"/><path d="M17 5h.01M20 8h.01M17 11h.01M20 4h.01"/></svg><span class="btn-label">Spray</span></button>
+          <button type="button" class="btn-tool" data-tool="bucket" title="Vödör"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l8-8 8 8-8 8z"/><path d="M4 12h16"/><path d="M21 16c.9 1.3 1.4 2.2 1.4 2.9a1.4 1.4 0 0 1-2.8 0c0-.7.5-1.6 1.4-2.9z"/></svg><span class="btn-label">Vödör</span></button>
         </div>
 
         <div class="tool-group">
-            <button id="undoBtn" class="btn-action">↩</button>
-            <button id="clearBtn" class="btn-action btn-clear">🗑</button>
+          <button type="button" class="btn-tool" data-tool="line" title="Vonal"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19L19 5"/></svg><span class="btn-label">Vonal</span></button>
+          <button type="button" class="btn-tool" data-tool="ellipse" title="Ellipszis"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="6"/></svg><span class="btn-label">Ellipszis</span></button>
+          <button type="button" class="btn-tool" data-tool="rectangle" title="Téglalap"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="1"/></svg><span class="btn-label">Téglalap</span></button>
+          <button type="button" class="btn-tool" id="fillToggle" aria-pressed="false" title="Kitöltés"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="1" fill="currentColor"/></svg><span class="btn-label">Kitöltés</span></button>
+        </div>
+
+        <div class="tool-group">
+          <button type="button" class="btn-tool" id="undoBtn" title="Visszavonás"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span class="btn-label">Visszavonás</span></button>
+          <button type="button" class="btn-tool btn-clear" id="clearBtn" title="Törlés"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg><span class="btn-label">Törlés</span></button>
         </div>
       </div>
     </section>
 
     <section class="panel planner-canvas">
-      <h2 class="panel-title">Tervező</h2>
-      <div class="canvas-container">
-        <canvas id="drawboard"></canvas>
+      <div class="panel-head">
+        <h2 class="panel-title">Tervező</h2>
+        <a class="cart-link" href="webshop.html">Kosár: <span id="cartCount">0</span> db · <span id="cartTotal">0 Ft</span></a>
+      </div>
+      <div class="canvas-container" id="canvasContainer">
+        <div class="canvas-stage" id="stage">
+          <canvas id="drawboard"></canvas>
+          <div class="items-layer" id="itemsLayer"></div>
+        </div>
+        <span class="grid-note" id="gridNote"></span>
       </div>
     </section>
   </main>

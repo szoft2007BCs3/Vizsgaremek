@@ -1,217 +1,364 @@
 const canvas = document.getElementById('drawboard');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const container = document.getElementById('canvasContainer');
+const stage = document.getElementById('stage');
+const gridNote = document.getElementById('gridNote');
+const gardenLengthInput = document.getElementById('gardenLength');
+const gardenWidthInput = document.getElementById('gardenWidth');
 const colorPicker = document.getElementById('colorPicker');
 const lineWidthInput = document.getElementById('lineWidth');
-const clearBtn = document.getElementById('clearBtn');
+const lineWidthValue = document.getElementById('lineWidthValue');
+const fillToggle = document.getElementById('fillToggle');
 const undoBtn = document.getElementById('undoBtn');
-const toolButtons = document.querySelectorAll('.btn-tool');
+const clearBtn = document.getElementById('clearBtn');
+const toolButtons = document.querySelectorAll('[data-tool]');
 
-let isDrawing = false;
+const MAX_HISTORY = 15;
+const FILL_TOLERANCE = 48;
+const SPRAY_DENSITY = 30;
+const SHAPE_TOOLS = ['line', 'ellipse', 'rectangle'];
+const MIN_GARDEN_SIZE = 1;
+const MAX_GARDEN_SIZE = 100;
+const MAX_CANVAS_SIDE = 1400;
+const MAX_PIXELS_PER_METER = 60;
+const GRID_STEPS = [1, 2, 5, 10, 20, 50];
+const MIN_GRID_CELL = 18;
+const SAVE_DELAY = 400;
+
 let currentTool = 'pen';
-
+let isDrawing = false;
 let startX = 0;
 let startY = 0;
+let lastX = 0;
+let lastY = 0;
 let snapshot = null;
+let sprayTimer = null;
+let history = [];
+let pixelsPerMeter = 0;
+let saveTimer = null;
 
-let historyStack = [];
-const maxHistoryLength = 25;
-
-let isShiftPressed = false;
-
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'Shift') isShiftPressed = true;
-});
-window.addEventListener('keyup', (e) => {
-    if (e.key === 'Shift') isShiftPressed = false;
-});
-
-function saveState() {
-    if (historyStack.length >= maxHistoryLength) {
-        historyStack.shift();
-    }
-    historyStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+function pixelRatio() {
+  return canvas.width / (canvas.clientWidth || canvas.width);
 }
 
-toolButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        document.querySelector('.btn-tool.active').classList.remove('active');
-        e.target.classList.add('active');
-        currentTool = e.target.getAttribute('data-tool');
-    });
-});
+function pushHistory() {
+  if (history.length >= MAX_HISTORY) history.shift();
+  history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+}
+
+function persistDrawing() {
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  saveDrawing(canvas.toDataURL());
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persistDrawing, SAVE_DELAY);
+}
+
+function commit() {
+  pushHistory();
+  scheduleSave();
+}
+
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
 
 function resizeCanvas() {
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+  const { length, width } = getGarden();
+  const ratio = Math.min(MAX_PIXELS_PER_METER, MAX_CANVAS_SIDE / Math.max(length, width));
+  const newWidth = Math.max(1, Math.round(length * ratio));
+  const newHeight = Math.max(1, Math.round(width * ratio));
+  if (ratio === pixelsPerMeter && newWidth === canvas.width && newHeight === canvas.height) return;
 
-    saveState();
+  const copy = document.createElement('canvas');
+  copy.width = canvas.width;
+  copy.height = canvas.height;
+  copy.getContext('2d').drawImage(canvas, 0, 0);
+
+  canvas.width = newWidth;
+  canvas.height = newHeight;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (pixelsPerMeter) {
+    const zoom = ratio / pixelsPerMeter;
+    ctx.drawImage(copy, 0, 0, copy.width * zoom, copy.height * zoom);
+  }
+
+  pixelsPerMeter = ratio;
+  history = [];
+  pushHistory();
 }
 
-function getCoordinates(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches.clientX : e.clientX;
-    const clientY = e.touches ? e.touches.clientY : e.clientY;
-    return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
-    };
+function fitStage() {
+  const { length, width } = getGarden();
+  const style = getComputedStyle(container);
+  const availableWidth = container.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  const availableHeight = container.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+  const meter = Math.max(0, Math.min(availableWidth / length, availableHeight / width));
+  const step = GRID_STEPS.find((value) => value * meter >= MIN_GRID_CELL) || GRID_STEPS[GRID_STEPS.length - 1];
+
+  stage.style.width = `${length * meter}px`;
+  stage.style.height = `${width * meter}px`;
+  stage.style.backgroundSize = `${step * meter}px ${step * meter}px`;
+  gridNote.textContent = `Egy négyzet = ${step} m`;
+}
+
+function showGardenSize() {
+  const { length, width } = getGarden();
+  gardenLengthInput.value = length;
+  gardenWidthInput.value = width;
+}
+
+function readGardenSize(input, fallback) {
+  const value = Number(input.value);
+  if (!value) return fallback;
+  return clamp(Math.round(value * 100) / 100, MIN_GARDEN_SIZE, MAX_GARDEN_SIZE);
+}
+
+function applyGarden() {
+  const current = getGarden();
+  setGarden(readGardenSize(gardenLengthInput, current.length), readGardenSize(gardenWidthInput, current.width));
+  showGardenSize();
+  resizeCanvas();
+  fitStage();
+  persistDrawing();
+  window.dispatchEvent(new Event('garden-changed'));
+}
+
+function restoreDrawing() {
+  const data = loadDrawing();
+  if (!data) return;
+  const image = new Image();
+  image.onload = () => {
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    history = [];
+    pushHistory();
+  };
+  image.src = data;
+}
+
+function getPoint(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: ((e.clientX - rect.left) * canvas.width) / rect.width,
+    y: ((e.clientY - rect.top) * canvas.height) / rect.height
+  };
+}
+
+function applyBrush() {
+  ctx.lineWidth = lineWidthInput.value * pixelRatio();
+  ctx.strokeStyle = colorPicker.value;
+  ctx.fillStyle = colorPicker.value;
+  ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+}
+
+function drawStroke(x, y) {
+  ctx.lineTo(x, y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+}
+
+function drawSpray() {
+  const ratio = pixelRatio();
+  const radius = lineWidthInput.value * 2 * ratio;
+  for (let i = 0; i < SPRAY_DENSITY; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = Math.random() * radius;
+    ctx.fillRect(lastX + Math.cos(angle) * distance, lastY + Math.sin(angle) * distance, ratio, ratio);
+  }
+}
+
+function drawShape(x, y, keepRatio) {
+  let width = x - startX;
+  let height = y - startY;
+
+  if (keepRatio && currentTool !== 'line') {
+    const size = Math.max(Math.abs(width), Math.abs(height));
+    width = Math.sign(width) * size;
+    height = Math.sign(height) * size;
+  }
+
+  ctx.beginPath();
+  if (currentTool === 'line') {
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(startX + width, startY + height);
+  } else if (currentTool === 'ellipse') {
+    ctx.ellipse(startX + width / 2, startY + height / 2, Math.abs(width / 2), Math.abs(height / 2), 0, 0, Math.PI * 2);
+  } else {
+    ctx.rect(startX, startY, width, height);
+  }
+
+  if (currentTool !== 'line' && fillToggle.getAttribute('aria-pressed') === 'true') ctx.fill();
+  ctx.stroke();
+}
+
+function hexToRgb(hex) {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+}
+
+function floodFill(x, y, hex) {
+  const width = canvas.width;
+  const height = canvas.height;
+  const image = ctx.getImageData(0, 0, width, height);
+  const data = image.data;
+  const [fillR, fillG, fillB] = hexToRgb(hex);
+
+  const first = (y * width + x) * 4;
+  const target = [data[first], data[first + 1], data[first + 2], data[first + 3]];
+  if (target[0] === fillR && target[1] === fillG && target[2] === fillB && target[3] === 255) return;
+
+  const isSimilar = (i) => target.every((value, c) => Math.abs(data[i + c] - value) <= FILL_TOLERANCE);
+
+  const paint = (i) => {
+    data[i] = fillR;
+    data[i + 1] = fillG;
+    data[i + 2] = fillB;
+    data[i + 3] = 255;
+  };
+
+  const blendEdge = (i) => {
+    const opacity = data[i + 3] / 255;
+    data[i] = data[i] * opacity + fillR * (1 - opacity);
+    data[i + 1] = data[i + 1] * opacity + fillG * (1 - opacity);
+    data[i + 2] = data[i + 2] * opacity + fillB * (1 - opacity);
+    data[i + 3] = 255;
+  };
+
+  const visited = new Uint8Array(width * height);
+  const stack = [y * width + x];
+  visited[stack[0]] = 1;
+
+  while (stack.length) {
+    const pixel = stack.pop();
+    paint(pixel * 4);
+
+    const column = pixel % width;
+    const neighbors = [];
+    if (column > 0) neighbors.push(pixel - 1);
+    if (column < width - 1) neighbors.push(pixel + 1);
+    if (pixel >= width) neighbors.push(pixel - width);
+    if (pixel < width * (height - 1)) neighbors.push(pixel + width);
+
+    for (const next of neighbors) {
+      if (visited[next]) continue;
+      visited[next] = 1;
+      if (isSimilar(next * 4)) stack.push(next);
+      else if (data[next * 4 + 3] < 255) blendEdge(next * 4);
+    }
+  }
+
+  ctx.putImageData(image, 0, 0);
 }
 
 function startDrawing(e) {
-    isDrawing = true;
-    const coords = getCoordinates(e);
-    startX = coords.x;
-    startY = coords.y;
+  if (e.button > 0) return;
+  const { x, y } = getPoint(e);
+  startX = lastX = x;
+  startY = lastY = y;
 
-    snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  applyBrush();
 
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
+  if (currentTool === 'bucket') {
+    floodFill(Math.floor(x), Math.floor(y), colorPicker.value);
+    commit();
+    return;
+  }
 
-    if (currentTool === 'pen') {
-        drawPen(coords.x, coords.y);
-    } else if (currentTool === 'bucket') {
-        floodFill(Math.floor(coords.x), Math.floor(coords.y), colorPicker.value);
-        saveState();
-        isDrawing = false;
-    } else if (currentTool === 'spray') {
-        drawSpray(coords.x, coords.y);
-    }
+  isDrawing = true;
+  canvas.setPointerCapture(e.pointerId);
+  if (SHAPE_TOOLS.includes(currentTool)) snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+
+  if (currentTool === 'pen' || currentTool === 'eraser') {
+    drawStroke(x, y);
+  } else if (currentTool === 'spray') {
+    drawSpray();
+    sprayTimer = setInterval(drawSpray, 20);
+  }
 }
 
 function draw(e) {
-    if (!isDrawing) return;
-    const coords = getCoordinates(e);
+  if (!isDrawing) return;
+  const { x, y } = getPoint(e);
+  lastX = x;
+  lastY = y;
 
-    ctx.lineWidth = lineWidthInput.value;
-    ctx.strokeStyle = colorPicker.value;
-    ctx.fillStyle = colorPicker.value;
-
-    if (['line', 'ellipse', 'rectangle'].includes(currentTool)) {
-        ctx.putImageData(snapshot, 0, 0);
-    }
-
-    if (currentTool === 'pen') {
-        drawPen(coords.x, coords.y);
-    } else if (currentTool === 'spray') {
-        drawSpray(coords.x, coords.y);
-    } else if (currentTool === 'line') {
-        drawLine(coords.x, coords.y);
-    } else if (currentTool === 'ellipse') {
-        drawEllipse(coords.x, coords.y);
-    } else if (currentTool === 'rectangle') {
-        drawRectangle(coords.x, coords.y);
-    }
+  if (currentTool === 'pen' || currentTool === 'eraser') {
+    drawStroke(x, y);
+  } else if (SHAPE_TOOLS.includes(currentTool)) {
+    ctx.putImageData(snapshot, 0, 0);
+    drawShape(x, y, e.shiftKey);
+  }
 }
 
 function stopDrawing() {
-    if (isDrawing) {
-        isDrawing = false;
-        ctx.beginPath();
-        if (currentTool !== 'bucket') {
-            saveState();
-        }
-    }
+  if (!isDrawing) return;
+  isDrawing = false;
+  clearInterval(sprayTimer);
+  ctx.beginPath();
+  commit();
 }
 
-
-function drawPen(x, y) {
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x, y);
+function undo() {
+  if (history.length < 2) return;
+  history.pop();
+  ctx.putImageData(history[history.length - 1], 0, 0);
+  scheduleSave();
 }
 
-function drawSpray(x, y) {
-    const density = 30;
-    const radius = lineWidthInput.value * 2;
-    for (let i = 0; i < density; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const r = Math.random() * radius;
-        ctx.fillRect(x + Math.cos(angle) * r, y + Math.sin(angle) * r, 1, 1);
-    }
-}
-
-function drawLine(endX, endY) {
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(endX, endY);
-    ctx.stroke();
-}
-
-function drawEllipse(endX, endY) {
-    ctx.beginPath();
-
-    let radiusX = Math.abs(endX - startX);
-    let radiusY = Math.abs(endY - startY);
-    let centerX = startX + (endX - startX) / 2;
-    let centerY = startY + (endY - startY) / 2;
-    if (isShiftPressed) {
-        const maxRadius = Math.max(radiusX, radiusY);
-        radiusX = maxRadius;
-        radiusY = maxRadius;
-        centerX = startX + Math.sign(endX - startX) * maxRadius;
-        centerY = startY + Math.sign(endY - startY) * maxRadius;
-        ctx.arc(startX, startY, maxRadius, 0, 2 * Math.PI);
-    } else {
-        ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-    }
-    ctx.stroke();
-}
-function drawRectangle(endX, endY) {
-    ctx.beginPath();
-    const width = endX - startX;
-    const height = endY - startY;
-    ctx.strokeRect(startX, startY, width, height);
-}
-function floodFill(startX, startY, fillColorHex) {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-    const fillR = parseInt(fillColorHex.slice(1, 3), 16);
-    const fillG = parseInt(fillColorHex.slice(3, 5), 16);
-    const fillB = parseInt(fillColorHex.slice(5, 7), 16);
-    const targetIndex = (startY * canvas.width + startX) * 4;
-    const targetR = data[targetIndex];
-    const targetG = data[targetIndex + 1];
-    const targetB = data[targetIndex + 2];
-    const targetA = data[targetIndex + 3];
-    if (targetR === fillR && targetG === fillG && targetB === fillB && targetA === 255) return;
-    const queue = [[startX, startY]];
-    while (queue.length > 0) {
-        const [x, y] = queue.shift();
-        const idx = (y * canvas.width + x) * 4;
-        if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
-            if (data[idx] === targetR && data[idx + 1] === targetG && data[idx + 2] === targetB && data[idx + 3] === targetA) {
-                data[idx] = fillR;
-                data[idx + 1] = fillG;
-                data[idx + 2] = fillB;
-                data[idx + 3] = 255;
-                queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-            }
-        }
-    }
-    ctx.putImageData(imageData, 0, 0);
-}
-undoBtn.addEventListener('click', () => {
-    if (historyStack.length > 1) {
-        historyStack.pop();
-        const previousState = historyStack[historyStack.length - 1];
-        ctx.putImageData(previousState, 0, 0);
-    } else if (historyStack.length === 1) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
+toolButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    toolButtons.forEach((other) => other.classList.toggle('active', other === button));
+    currentTool = button.dataset.tool;
+  });
 });
+
+fillToggle.addEventListener('click', () => {
+  const isOn = fillToggle.getAttribute('aria-pressed') === 'true';
+  fillToggle.setAttribute('aria-pressed', String(!isOn));
+  fillToggle.classList.toggle('active', !isOn);
+});
+
+lineWidthInput.addEventListener('input', () => {
+  lineWidthValue.textContent = lineWidthInput.value;
+});
+
+undoBtn.addEventListener('click', undo);
+
 clearBtn.addEventListener('click', () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    saveState();
+  clearCanvas();
+  commit();
 });
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mousemove', draw);
-window.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('touchstart', startDrawing, { passive: true });
-canvas.addEventListener('touchmove', draw, { passive: true });
-window.addEventListener('touchend', stopDrawing);
-window.addEventListener('resize', resizeCanvas);
+
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+    e.preventDefault();
+    undo();
+  }
+});
+
+canvas.addEventListener('pointerdown', startDrawing);
+canvas.addEventListener('pointermove', draw);
+canvas.addEventListener('pointerup', stopDrawing);
+canvas.addEventListener('pointercancel', stopDrawing);
+
+gardenLengthInput.addEventListener('change', applyGarden);
+gardenWidthInput.addEventListener('change', applyGarden);
+
+window.addEventListener('pagehide', () => {
+  if (saveTimer) persistDrawing();
+});
+
+new ResizeObserver(fitStage).observe(container);
+
+showGardenSize();
 resizeCanvas();
+fitStage();
+restoreDrawing();

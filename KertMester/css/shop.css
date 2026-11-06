@@ -3,11 +3,238 @@
   max-width: 120rem;
   height: calc(100vh - 5.5rem);
   min-height: 35rem;
+  flex: none;
   margin: 0 auto;
   padding: 1rem;
   display: grid;
-  grid-template-columns: 15rem 1fr 18rem;
+  grid-template-columns: 15rem 1fr 20rem;
   gap: 1rem;
+}
+
+.shop-items,
+.shop-cart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  overflow: hidden;
+}
+
+.shop-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.shop-search,
+.shop-select {
+  padding: 0.55rem 0.9rem;
+  background: var(--cream);
+  color: var(--ink);
+  border: 1px solid var(--moss);
+  border-radius: 2rem;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.shop-search {
+  flex: 1 1 14rem;
+}
+
+.shop-select {
+  flex: 0 1 16rem;
+  cursor: pointer;
+}
+
+.shop-search:focus-visible,
+.shop-select:focus-visible,
+.btn-add:focus-visible,
+.qty-btn:focus-visible,
+.cart-item-remove:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.shop-list,
+.cart-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 0.3rem 0 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.shop-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.7rem;
+  align-content: start;
+}
+
+.shop-product,
+.cart-item {
+  background: var(--cream);
+  border: 1px solid var(--moss);
+  border-radius: 0.8rem;
+}
+
+.shop-product {
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.shop-product-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.shop-product strong,
+.cart-item strong {
+  font-family: Georgia, serif;
+  font-size: 0.95rem;
+  color: var(--forest);
+}
+
+.shop-product-desc {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.shop-product-meta,
+.cart-item-meta {
+  font-size: 0.8rem;
+  color: var(--sage-line);
+}
+
+.shop-product-foot {
+  margin-top: auto;
+  padding-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.shop-price {
+  font-weight: bold;
+  color: var(--forest);
+}
+
+.btn-add {
+  padding: 0.4rem 1rem;
+  background: var(--forest);
+  color: var(--butter);
+  border: 1px solid var(--gold);
+  border-radius: 2rem;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-add:hover {
+  background: var(--forest-dark);
+}
+
+.shop-empty,
+.cart-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sage-line);
+}
+
+.cart-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cart-item {
+  padding: 0.6rem 0.7rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.4rem 0.6rem;
+  align-items: center;
+}
+
+.cart-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cart-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qty-btn,
+.cart-item-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.qty-btn {
+  width: 1.8rem;
+  height: 1.8rem;
+  background: var(--forest);
+  color: var(--butter);
+  border: 1px solid var(--gold);
+  font-size: 1.1rem;
+}
+
+.qty-btn:hover {
+  background: var(--forest-dark);
+}
+
+.cart-item-remove {
+  width: 1.5rem;
+  height: 1.5rem;
+  background: transparent;
+  color: var(--sage-line);
+  border: 1px solid var(--moss);
+}
+
+.cart-item-remove:hover {
+  background: #8b3a2f;
+  color: var(--cream);
+}
+
+.qty-value {
+  min-width: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.cart-item-total {
+  text-align: right;
+}
+
+.cart-footer {
+  margin-top: auto;
+  padding-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-top: 1px solid var(--gold);
+  color: var(--forest);
+}
+
+.cart-footer strong {
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
 }
 
 @media (max-width: 1000px) {
@@ -17,12 +244,16 @@
     grid-template-columns: 1fr;
   }
 
-  .shop-offers,
-  .shop-cart {
+  .shop-offers {
+    order: 3;
     min-height: 8rem;
   }
 
   .shop-items {
-    min-height: 25rem;
+    max-height: 42rem;
+  }
+
+  .shop-cart {
+    max-height: 36rem;
   }
 }
