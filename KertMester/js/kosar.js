@@ -2,7 +2,7 @@ const PLAN_KEY = 'kertmester-terv';
 const DRAWING_KEY = 'kertmester-rajz';
 
 function readPlan() {
-  const empty = { garden: { length: 15, width: 10 }, items: [], extras: {}, nextId: 1 };
+  const empty = { garden: { length: 15, width: 10 }, items: [], zones: [], extras: {}, nextId: 1 };
   try {
     return { ...empty, ...JSON.parse(localStorage.getItem(PLAN_KEY)) };
   } catch {
@@ -32,6 +32,9 @@ function setGarden(length, width) {
     item.x = clamp(item.x, 0, length);
     item.y = clamp(item.y, 0, width);
   });
+  plan.zones.forEach((zone) => {
+    zone.points = zone.points.map((point) => ({ x: clamp(point.x, 0, length), y: clamp(point.y, 0, width) }));
+  });
   savePlan();
 }
 
@@ -56,6 +59,30 @@ function removePlacedItem(id) {
   savePlan();
 }
 
+function getZones() {
+  return plan.zones;
+}
+
+function addZone(productId, points) {
+  plan.zones.push({ id: plan.nextId++, productId, points });
+  savePlan();
+}
+
+function removeZone(id) {
+  plan.zones = plan.zones.filter((zone) => zone.id !== id);
+  savePlan();
+}
+
+function getZoneArea(productId) {
+  return plan.zones
+    .filter((zone) => zone.productId === productId)
+    .reduce((sum, zone) => sum + polygonArea(zone.points), 0);
+}
+
+function getExtraCount(productId) {
+  return plan.extras[productId] || 0;
+}
+
 function getPlacedCount(productId) {
   return plan.items.filter((item) => item.productId === productId).length;
 }
@@ -64,6 +91,11 @@ function getQuantities() {
   const quantities = { ...plan.extras };
   plan.items.forEach((item) => {
     quantities[item.productId] = (quantities[item.productId] || 0) + 1;
+  });
+  new Set(plan.zones.map((zone) => zone.productId)).forEach((productId) => {
+    if (!isAreaProduct(productId)) return;
+    const units = Math.max(1, Math.ceil(getZoneArea(productId) / AREA_PRODUCTS[productId].perUnit - 1e-9));
+    quantities[productId] = (quantities[productId] || 0) + units;
   });
   return quantities;
 }
@@ -77,7 +109,7 @@ function decreaseQuantity(productId) {
   if (plan.extras[productId] > 0) {
     plan.extras[productId]--;
     if (plan.extras[productId] === 0) delete plan.extras[productId];
-  } else {
+  } else if (!isAreaProduct(productId)) {
     const last = plan.items.findLast((item) => item.productId === productId);
     if (last) plan.items = plan.items.filter((item) => item !== last);
   }
@@ -87,6 +119,7 @@ function decreaseQuantity(productId) {
 function removeProduct(productId) {
   delete plan.extras[productId];
   plan.items = plan.items.filter((item) => item.productId !== productId);
+  plan.zones = plan.zones.filter((zone) => zone.productId !== productId);
   savePlan();
 }
 

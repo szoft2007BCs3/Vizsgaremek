@@ -198,6 +198,32 @@
   background: var(--forest-dark);
 }
 
+.qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-order {
+  padding: 0.7rem 1rem;
+  background: var(--gold);
+  color: var(--ink);
+  border: none;
+  border-radius: 2rem;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-order:hover:not(:disabled) {
+  background: #d6ab4c;
+}
+
+.btn-order:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .cart-item-remove {
   width: 1.5rem;
   height: 1.5rem;

@@ -1,4 +1,5 @@
 const priceFormat = new Intl.NumberFormat('hu-HU');
+const areaFormat = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 1 });
 
 const DEFAULT_LOOK = { icon: '🌿', color: '#6E8B5E' };
 
@@ -35,4 +36,17 @@ function formatPrice(amount) {
 
 function normalizeText(text) {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+function formatArea(area) {
+  return `${areaFormat.format(area)} m²`;
+}
+
+function polygonArea(points) {
+  let sum = 0;
+  points.forEach((point, i) => {
+    const next = points[(i + 1) % points.length];
+    sum += point.x * next.y - next.x * point.y;
+  });
+  return Math.abs(sum) / 2;
 }

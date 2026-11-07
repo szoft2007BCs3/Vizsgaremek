@@ -10,15 +10,6 @@ function shortName(product) {
   return product.Nev.split(' (')[0];
 }
 
-function pointToGarden(clientX, clientY) {
-  const rect = itemsLayer.getBoundingClientRect();
-  const { length, width } = getGarden();
-  return {
-    x: clamp(((clientX - rect.left) / rect.width) * length, 0, length),
-    y: clamp(((clientY - rect.top) / rect.height) * width, 0, width)
-  };
-}
-
 function isOverStage(clientX, clientY) {
   const rect = itemsLayer.getBoundingClientRect();
   return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
@@ -58,6 +49,7 @@ function updateCartSummary() {
 
 function refreshPlan() {
   renderPlacedItems();
+  renderZones();
   updateCartSummary();
 }
 

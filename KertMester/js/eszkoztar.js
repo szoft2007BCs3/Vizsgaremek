@@ -41,11 +41,17 @@ async function showProducts(category) {
     item.dataset.id = product.ID;
     item.title = product.Leiras;
     item.append(createProductIcon(product.Kategoria_ID), text);
-    item.addEventListener('pointerdown', (e) => startProductDrag(e, product));
+    if (isAreaProduct(product.ID)) {
+      item.classList.add('is-area');
+      item.append(createElement('span', 'toolbox-badge', 'Terület'));
+      item.addEventListener('click', () => activateZoneTool(product));
+    } else {
+      item.addEventListener('pointerdown', (e) => startProductDrag(e, product));
+    }
     list.append(item);
   });
 
-  const hint = createElement('p', 'toolbox-hint', 'Húzd a terméket a tervezőre (érintőképernyőn koppints rá).');
+  const hint = createElement('p', 'toolbox-hint', 'Húzd a terméket a tervezőre (érintőn koppints rá). A „Terület” jelzésű termékekre kattintva körberajzolhatod a kívánt részt.');
 
   toolbox.replaceChildren(header, hint, list);
 }

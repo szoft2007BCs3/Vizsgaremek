@@ -1,8 +1,5 @@
 const canvas = document.getElementById('drawboard');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
-const container = document.getElementById('canvasContainer');
-const stage = document.getElementById('stage');
-const gridNote = document.getElementById('gridNote');
 const gardenLengthInput = document.getElementById('gardenLength');
 const gardenWidthInput = document.getElementById('gardenWidth');
 const colorPicker = document.getElementById('colorPicker');
@@ -13,16 +10,15 @@ const undoBtn = document.getElementById('undoBtn');
 const clearBtn = document.getElementById('clearBtn');
 const toolButtons = document.querySelectorAll('[data-tool]');
 
-const MAX_HISTORY = 15;
+const HISTORY_BUDGET = 100 * 1024 * 1024;
+const MAX_HISTORY = 20;
 const FILL_TOLERANCE = 48;
 const SPRAY_DENSITY = 30;
 const SHAPE_TOOLS = ['line', 'ellipse', 'rectangle'];
 const MIN_GARDEN_SIZE = 1;
 const MAX_GARDEN_SIZE = 100;
-const MAX_CANVAS_SIDE = 1400;
+const MAX_CANVAS_SIDE = 2400;
 const MAX_PIXELS_PER_METER = 60;
-const GRID_STEPS = [1, 2, 5, 10, 20, 50];
-const MIN_GRID_CELL = 18;
 const SAVE_DELAY = 400;
 
 let currentTool = 'pen';
@@ -34,6 +30,7 @@ let lastY = 0;
 let snapshot = null;
 let sprayTimer = null;
 let history = [];
+let dragHandler = null;
 let pixelsPerMeter = 0;
 let saveTimer = null;
 
@@ -42,7 +39,8 @@ function pixelRatio() {
 }
 
 function pushHistory() {
-  if (history.length >= MAX_HISTORY) history.shift();
+  const limit = Math.max(3, Math.min(MAX_HISTORY, Math.floor(HISTORY_BUDGET / (canvas.width * canvas.height * 4))));
+  while (history.length >= limit) history.shift();
   history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
 }
 
@@ -93,20 +91,6 @@ function resizeCanvas() {
   pushHistory();
 }
 
-function fitStage() {
-  const { length, width } = getGarden();
-  const style = getComputedStyle(container);
-  const availableWidth = container.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-  const availableHeight = container.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-  const meter = Math.max(0, Math.min(availableWidth / length, availableHeight / width));
-  const step = GRID_STEPS.find((value) => value * meter >= MIN_GRID_CELL) || GRID_STEPS[GRID_STEPS.length - 1];
-
-  stage.style.width = `${length * meter}px`;
-  stage.style.height = `${width * meter}px`;
-  stage.style.backgroundSize = `${step * meter}px ${step * meter}px`;
-  gridNote.textContent = `Egy négyzet = ${step} m`;
-}
-
 function showGardenSize() {
   const { length, width } = getGarden();
   gardenLengthInput.value = length;
@@ -124,7 +108,7 @@ function applyGarden() {
   setGarden(readGardenSize(gardenLengthInput, current.length), readGardenSize(gardenWidthInput, current.width));
   showGardenSize();
   resizeCanvas();
-  fitStage();
+  fitView();
   persistDrawing();
   window.dispatchEvent(new Event('garden-changed'));
 }
@@ -255,8 +239,31 @@ function floodFill(x, y, hex) {
   ctx.putImageData(image, 0, 0);
 }
 
+function startDrag(e, handler) {
+  canvas.setPointerCapture(e.pointerId);
+  dragHandler = handler;
+}
+
+function setTool(tool) {
+  currentTool = tool;
+  toolButtons.forEach((button) => button.classList.toggle('active', button.dataset.tool === tool));
+  canvas.style.cursor = tool === 'hand' ? 'grab' : 'crosshair';
+  window.dispatchEvent(new Event('tool-changed'));
+}
+
 function startDrawing(e) {
+  if (e.button === 1 || (e.button === 0 && currentTool === 'hand')) {
+    e.preventDefault();
+    startDrag(e, createPanDrag(e));
+    return;
+  }
   if (e.button > 0) return;
+
+  if (currentTool === 'zone') {
+    startDrag(e, createZoneDrag(e));
+    return;
+  }
+
   const { x, y } = getPoint(e);
   startX = lastX = x;
   startY = lastY = y;
@@ -285,6 +292,10 @@ function startDrawing(e) {
 }
 
 function draw(e) {
+  if (dragHandler) {
+    dragHandler.move(e);
+    return;
+  }
   if (!isDrawing) return;
   const { x, y } = getPoint(e);
   lastX = x;
@@ -298,7 +309,12 @@ function draw(e) {
   }
 }
 
-function stopDrawing() {
+function stopDrawing(e) {
+  if (dragHandler) {
+    dragHandler.end(e);
+    dragHandler = null;
+    return;
+  }
   if (!isDrawing) return;
   isDrawing = false;
   clearInterval(sprayTimer);
@@ -314,10 +330,7 @@ function undo() {
 }
 
 toolButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    toolButtons.forEach((other) => other.classList.toggle('active', other === button));
-    currentTool = button.dataset.tool;
-  });
+  button.addEventListener('click', () => setTool(button.dataset.tool));
 });
 
 fillToggle.addEventListener('click', () => {
@@ -356,9 +369,6 @@ window.addEventListener('pagehide', () => {
   if (saveTimer) persistDrawing();
 });
 
-new ResizeObserver(fitStage).observe(container);
-
 showGardenSize();
 resizeCanvas();
-fitStage();
 restoreDrawing();

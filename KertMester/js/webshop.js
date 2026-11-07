@@ -6,6 +6,7 @@ const cartList = document.getElementById('cartList');
 const cartEmpty = document.getElementById('cartEmpty');
 const cartCount = document.getElementById('cartCount');
 const cartTotal = document.getElementById('cartTotal');
+const orderBtn = document.getElementById('orderBtn');
 
 let products = [];
 let categoriesById = {};
@@ -49,8 +50,13 @@ function renderProducts() {
 
 function createCartItem(product, quantity) {
   const placed = getPlacedCount(product.ID);
+  const area = getZoneArea(product.ID);
+  const details = [`${formatPrice(product.Ar)} / db`];
+  if (placed) details.push(`tervben: ${placed} db`);
+  if (area) details.push(`tervben: ${formatArea(area)}`);
+
   const info = createElement('div', 'cart-item-info');
-  info.append(createElement('strong', '', product.Nev), createElement('span', 'cart-item-meta', `${formatPrice(product.Ar)} / db${placed ? ` · tervben: ${placed} db` : ''}`));
+  info.append(createElement('strong', '', product.Nev), createElement('span', 'cart-item-meta', details.join(' · ')));
 
   const removeButton = createElement('button', 'cart-item-remove', '×');
   removeButton.type = 'button';
@@ -63,6 +69,10 @@ function createCartItem(product, quantity) {
   const minusButton = createElement('button', 'qty-btn', '−');
   minusButton.type = 'button';
   minusButton.setAttribute('aria-label', 'Eggyel kevesebb');
+  if (isAreaProduct(product.ID) && getExtraCount(product.ID) === 0) {
+    minusButton.disabled = true;
+    minusButton.title = 'A területet a tervezőben tudod törölni';
+  }
   minusButton.addEventListener('click', () => {
     decreaseQuantity(product.ID);
     renderCart();
@@ -97,6 +107,7 @@ function renderCart() {
   const summary = getCartSummary(productsById);
   cartCount.textContent = summary.count;
   cartTotal.textContent = formatPrice(summary.total);
+  orderBtn.disabled = summary.count === 0;
 }
 
 async function initShop() {
@@ -114,6 +125,11 @@ async function initShop() {
   renderProducts();
   renderCart();
 }
+
+orderBtn.addEventListener('click', () => {
+  const summary = getCartSummary(productsById);
+  alert(`Köszönjük a rendelésedet!\n\nTermékek: ${summary.count} db\nVégösszeg: ${formatPrice(summary.total)}`);
+});
 
 searchInput.addEventListener('input', renderProducts);
 categoryFilter.addEventListener('change', renderProducts);

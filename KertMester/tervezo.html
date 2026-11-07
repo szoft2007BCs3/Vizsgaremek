@@ -15,9 +15,12 @@
   <link rel="icon" type="image/png" href="imgs/icon.png" />
   <script src="js/adatok.js" defer></script>
   <script src="js/segedek.js" defer></script>
+  <script src="js/teruletek.js" defer></script>
   <script src="js/kosar.js" defer></script>
   <script src="js/eszkoztar.js" defer></script>
+  <script src="js/nezet.js" defer></script>
   <script src="js/tervezo.js" defer></script>
+  <script src="js/tervezo-teruletek.js" defer></script>
   <script src="js/tervezo-elemek.js" defer></script>
 </head>
 
@@ -74,17 +77,6 @@
       <h2 class="panel-title">Rajzmenü</h2>
       <div class="toolbar">
         <div class="tool-group">
-          <label class="garden-field">Hosszúság
-            <input type="number" id="gardenLength" min="1" max="100" step="0.5">
-            m
-          </label>
-          <label class="garden-field">Szélesség
-            <input type="number" id="gardenWidth" min="1" max="100" step="0.5">
-            m
-          </label>
-        </div>
-
-        <div class="tool-group">
           <input type="color" id="colorPicker" value="#24392C" title="Szín" aria-label="Szín">
           <label class="size-control" title="Vonalvastagság">
             <input type="range" id="lineWidth" min="1" max="50" value="5" aria-label="Vonalvastagság">
@@ -97,6 +89,7 @@
           <button type="button" class="btn-tool" data-tool="eraser" title="Radír"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 20H9L4 15a2 2 0 0 1 0-2.8l8.2-8.2a2 2 0 0 1 2.8 0l5 5a2 2 0 0 1 0 2.8L12 20"/><path d="M7 11l6 6"/></svg><span class="btn-label">Radír</span></button>
           <button type="button" class="btn-tool" data-tool="spray" title="Spray"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="9" height="11" rx="1.5"/><path d="M6.5 10V6.5h4V10"/><path d="M17 5h.01M20 8h.01M17 11h.01M20 4h.01"/></svg><span class="btn-label">Spray</span></button>
           <button type="button" class="btn-tool" data-tool="bucket" title="Vödör"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l8-8 8 8-8 8z"/><path d="M4 12h16"/><path d="M21 16c.9 1.3 1.4 2.2 1.4 2.9a1.4 1.4 0 0 1-2.8 0c0-.7.5-1.6 1.4-2.9z"/></svg><span class="btn-label">Vödör</span></button>
+          <button type="button" class="btn-tool" data-tool="hand" title="Mozgatás"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M11 10V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M14 10.5V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-4.6-2.2L3 14.2a1.6 1.6 0 0 1 2.4-2L8 15"/></svg><span class="btn-label">Mozgatás</span></button>
         </div>
 
         <div class="tool-group">
@@ -104,6 +97,13 @@
           <button type="button" class="btn-tool" data-tool="ellipse" title="Ellipszis"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="6"/></svg><span class="btn-label">Ellipszis</span></button>
           <button type="button" class="btn-tool" data-tool="rectangle" title="Téglalap"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="1"/></svg><span class="btn-label">Téglalap</span></button>
           <button type="button" class="btn-tool" id="fillToggle" aria-pressed="false" title="Kitöltés"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="1" fill="currentColor"/></svg><span class="btn-label">Kitöltés</span></button>
+        </div>
+
+        <div class="tool-group zone-group" id="zoneGroup" hidden>
+          <span class="zone-swatch" id="zoneSwatch"></span>
+          <span class="zone-name" id="zoneName"></span>
+          <button type="button" class="btn-tool" id="zoneRectBtn" aria-pressed="false" title="Téglalap alakú terület"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="1"/></svg>Téglalap</button>
+          <button type="button" class="btn-tool zone-exit" id="zoneExitBtn" title="Kilépés a területrajzolásból (Esc)">✓ Kész</button>
         </div>
 
         <div class="tool-group">
@@ -116,14 +116,33 @@
     <section class="panel planner-canvas">
       <div class="panel-head">
         <h2 class="panel-title">Tervező</h2>
+        <div class="garden-size">
+          <label class="garden-field">Hosszúság
+            <input type="number" id="gardenLength" min="1" max="100" step="0.5">
+            m
+          </label>
+          <label class="garden-field">Szélesség
+            <input type="number" id="gardenWidth" min="1" max="100" step="0.5">
+            m
+          </label>
+        </div>
         <a class="cart-link" href="webshop.html">Kosár: <span id="cartCount">0</span> db · <span id="cartTotal">0 Ft</span></a>
       </div>
       <div class="canvas-container" id="canvasContainer">
+        <canvas class="view-canvas" id="gridCanvas"></canvas>
         <div class="canvas-stage" id="stage">
+          <svg class="zones-layer" id="zonesLayer" preserveAspectRatio="none"></svg>
           <canvas id="drawboard"></canvas>
+          <div class="zone-tags" id="zoneTags"></div>
           <div class="items-layer" id="itemsLayer"></div>
         </div>
-        <span class="grid-note" id="gridNote"></span>
+        <canvas class="view-canvas" id="rulerCanvas"></canvas>
+        <div class="scale-bar"><span id="scaleBarLabel"></span><span class="scale-bar-line" id="scaleBarLine"></span></div>
+        <div class="zoom-controls">
+          <button type="button" class="zoom-btn" id="zoomInBtn" aria-label="Nagyítás" title="Nagyítás">+</button>
+          <button type="button" class="zoom-btn" id="zoomOutBtn" aria-label="Kicsinyítés" title="Kicsinyítés">−</button>
+          <button type="button" class="zoom-btn" id="zoomFitBtn" aria-label="Teljes kert" title="Teljes kert">⤢</button>
+        </div>
       </div>
     </section>
   </main>
