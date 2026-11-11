@@ -14,8 +14,10 @@
   <link rel="stylesheet" href="css/footer.css">
   <link rel="icon" type="image/png" href="imgs/icon.png"/>
   <script src="js/adatok.js" defer></script>
+  <script src="js/ikonok.js" defer></script>
   <script src="js/segedek.js" defer></script>
   <script src="js/teruletek.js" defer></script>
+  <script src="js/ajanlatok.js" defer></script>
   <script src="js/kosar.js" defer></script>
   <script src="js/webshop.js" defer></script>
 </head>
@@ -56,6 +58,7 @@
       <li style="--i:0"><a href="index.html" data-nav>Főoldal</a></li>
       <li style="--i:1"><a href="tervezo.html" data-nav>Tervező</a></li>
       <li style="--i:2"><a href="webshop.html" data-nav>Webshop</a></li>
+      <li style="--i:3"><a href="profil.html" data-nav>Profil</a></li>
     </ol>
 
     <div class="nav-foliage" aria-hidden="true">
@@ -66,6 +69,9 @@
   <main class="shop">
     <aside class="panel shop-offers">
       <h2 class="panel-title">Ajánlatok</h2>
+      <div class="offer-marquee" id="offerMarquee">
+        <div class="offer-track" id="offerTrack"></div>
+      </div>
     </aside>
 
     <section class="panel shop-items">
@@ -84,10 +90,12 @@
       <h2 class="panel-title">Kosár</h2>
       <ul class="cart-list" id="cartList"></ul>
       <p class="cart-empty" id="cartEmpty">A kosár üres. Húzz termékeket a tervezőbe, vagy add hozzá őket a katalógusból.</p>
-      <div class="cart-footer">
-        <span>Összesen (<span id="cartCount">0</span> db)</span>
-        <strong id="cartTotal">0 Ft</strong>
-      </div>
+      <ul class="cart-discounts" id="cartDiscounts" hidden></ul>
+      <dl class="cart-footer">
+        <div class="cart-row" id="subtotalRow" hidden><dt>Részösszeg</dt><dd id="cartSubtotal">0 Ft</dd></div>
+        <div class="cart-row cart-row-saving" id="savingRow" hidden><dt>Megtakarítás</dt><dd id="cartSaving">0 Ft</dd></div>
+        <div class="cart-row cart-row-total"><dt>Összesen (<span id="cartCount">0</span> db)</dt><dd id="cartTotal">0 Ft</dd></div>
+      </dl>
       <button type="button" class="btn-order" id="orderBtn" disabled>Megrendelés</button>
     </aside>
   </main>
@@ -104,6 +112,7 @@
           <li><a href="index.html">Főoldal</a></li>
           <li><a href="tervezo.html">Tervező</a></li>
           <li><a href="webshop.html">Webshop</a></li>
+          <li><a href="profil.html">Profil</a></li>
         </ul>
       </div>
 

@@ -40,7 +40,7 @@ async function showProducts(category) {
     const item = createElement('li', 'toolbox-product');
     item.dataset.id = product.ID;
     item.title = product.Leiras;
-    item.append(createProductIcon(product.Kategoria_ID), text);
+    item.append(createProductIcon(product), text);
     if (isAreaProduct(product.ID)) {
       item.classList.add('is-area');
       item.append(createElement('span', 'toolbox-badge', 'Terület'));

@@ -24,7 +24,7 @@ function createPlacedItem(item) {
   remove.setAttribute('aria-label', 'Eltávolítás a tervből');
 
   const marker = createElement('span', 'placed-marker');
-  marker.append(createProductIcon(product.Kategoria_ID), remove);
+  marker.append(createProductIcon(product), remove);
 
   const element = createElement('div', 'placed-item');
   element.tabIndex = 0;
@@ -48,6 +48,7 @@ function updateCartSummary() {
 }
 
 function refreshPlan() {
+  renderFootprints();
   renderPlacedItems();
   renderZones();
   updateCartSummary();
@@ -76,7 +77,7 @@ function startProductDrag(e, product) {
 
   function move(event) {
     if (!ghost && Math.hypot(event.clientX - startX, event.clientY - startY) > DRAG_THRESHOLD) {
-      ghost = createProductIcon(product.Kategoria_ID);
+      ghost = createProductIcon(product);
       ghost.classList.add('drag-ghost');
       document.body.append(ghost);
       document.body.classList.add('is-dragging');
@@ -84,6 +85,13 @@ function startProductDrag(e, product) {
     if (ghost) {
       ghost.style.left = `${event.clientX}px`;
       ghost.style.top = `${event.clientY}px`;
+      if (isOverStage(event.clientX, event.clientY)) {
+        const point = pointToGarden(event.clientX, event.clientY);
+        ghost.classList.toggle('is-blocked', showSpacingGuides(product, point.x, point.y, null));
+      } else {
+        hideSpacingGuides();
+        ghost.classList.remove('is-blocked');
+      }
     }
   }
 
@@ -92,6 +100,7 @@ function startProductDrag(e, product) {
     window.removeEventListener('pointerup', drop);
     window.removeEventListener('pointercancel', finish);
     document.body.classList.remove('is-dragging');
+    hideSpacingGuides();
     if (ghost) ghost.remove();
   }
 
@@ -120,7 +129,7 @@ itemsLayer.addEventListener('pointerdown', (e) => {
   const id = Number(element.dataset.id);
   const item = getPlacedItems().find((other) => other.id === id);
   const point = pointToGarden(e.clientX, e.clientY);
-  draggedItem = { element, id, offsetX: point.x - item.x, offsetY: point.y - item.y, x: item.x, y: item.y };
+  draggedItem = { element, id, productId: item.productId, offsetX: point.x - item.x, offsetY: point.y - item.y, x: item.x, y: item.y };
   element.setPointerCapture(e.pointerId);
 });
 
@@ -132,11 +141,16 @@ itemsLayer.addEventListener('pointermove', (e) => {
   draggedItem.y = clamp(point.y - draggedItem.offsetY, 0, width);
   draggedItem.element.style.left = `${(draggedItem.x / length) * 100}%`;
   draggedItem.element.style.top = `${(draggedItem.y / width) * 100}%`;
+  moveFootprint(draggedItem.id, draggedItem.x, draggedItem.y);
+  const product = productsById[draggedItem.productId];
+  draggedItem.element.classList.toggle('is-blocked', showSpacingGuides(product, draggedItem.x, draggedItem.y, draggedItem.id));
 });
 
 function endItemDrag() {
   if (!draggedItem) return;
   movePlacedItem(draggedItem.id, draggedItem.x, draggedItem.y);
+  draggedItem.element.classList.remove('is-blocked');
+  hideSpacingGuides();
   draggedItem = null;
 }
 

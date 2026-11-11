@@ -157,8 +157,8 @@
 .planner-menu {
   padding: 0.7rem 1rem;
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
 .toolbar {
@@ -173,14 +173,13 @@
 }
 
 .tool-group {
-  padding: 0.3rem 0.5rem;
+  padding: 0.35rem 0.6rem 0.4rem;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.3rem;
+  flex-direction: column;
+  gap: 0.15rem;
   background: var(--butter);
   border: 1px solid var(--moss);
-  border-radius: 2rem;
+  border-radius: 1rem;
 }
 
 .size-control {
@@ -243,14 +242,21 @@ input[type="color"]::-moz-color-swatch {
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
-.btn-label {
-  display: none;
+.group-title {
+  display: block;
+  padding: 0 0.4rem;
+  font-size: 0.68rem;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--moss);
 }
 
-@media (min-width: 1500px) {
-  .btn-label {
-    display: inline;
-  }
+.group-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
 }
 
 .btn-tool:hover {
@@ -521,7 +527,8 @@ body.is-dragging .canvas-stage {
   font-size: 0.7rem;
 }
 
-[hidden] {
+[hidden],
+.toolbar.zone-mode .drawing-only {
   display: none !important;
 }
 
@@ -638,13 +645,6 @@ body.is-dragging {
     min-height: 30rem;
   }
 
-  .planner-menu {
-    display: block;
-  }
-
-  .toolbar {
-    margin-top: 0.6rem;
-  }
 }
 
 @media (max-width: 600px) {
@@ -654,10 +654,49 @@ body.is-dragging {
 
   .tool-group {
     flex: 1 1 auto;
+  }
+
+  .group-tools {
     justify-content: center;
   }
 
   input[type="range"] {
     width: 6rem;
   }
+}
+
+.footprints-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.spacing-guides circle {
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.guide-free {
+  fill: rgba(230, 190, 80, 0.08);
+  stroke: rgba(198, 154, 60, 0.7);
+  stroke-dasharray: 6 5;
+}
+
+.guide-blocked {
+  fill: rgba(200, 60, 45, 0.22);
+  stroke: #b3382a;
+  stroke-dasharray: 6 5;
+}
+
+.guide-own {
+  fill: rgba(70, 96, 63, 0.18);
+  stroke: var(--forest);
+}
+
+.drag-ghost.is-blocked .product-icon,
+.drag-ghost.is-blocked,
+.placed-item.is-blocked .product-icon {
+  box-shadow: 0 0 0 3px #b3382a;
 }

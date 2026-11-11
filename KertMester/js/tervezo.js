@@ -16,7 +16,7 @@ const FILL_TOLERANCE = 48;
 const SPRAY_DENSITY = 30;
 const SHAPE_TOOLS = ['line', 'ellipse', 'rectangle'];
 const MIN_GARDEN_SIZE = 1;
-const MAX_GARDEN_SIZE = 100;
+const MAX_GARDEN_SIZE = 500;
 const MAX_CANVAS_SIDE = 2400;
 const MAX_PIXELS_PER_METER = 60;
 const SAVE_DELAY = 400;
@@ -41,7 +41,7 @@ function pixelRatio() {
 function pushHistory() {
   const limit = Math.max(3, Math.min(MAX_HISTORY, Math.floor(HISTORY_BUDGET / (canvas.width * canvas.height * 4))));
   while (history.length >= limit) history.shift();
-  history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+  history.push({ image: ctx.getImageData(0, 0, canvas.width, canvas.height), zones: structuredClone(getZones()) });
 }
 
 function persistDrawing() {
@@ -58,6 +58,12 @@ function scheduleSave() {
 function commit() {
   pushHistory();
   scheduleSave();
+}
+
+function finishInk() {
+  if (currentTool !== 'eraser') carveZonesWithInk();
+  commit();
+  refreshPlan();
 }
 
 function clearCanvas() {
@@ -272,7 +278,7 @@ function startDrawing(e) {
 
   if (currentTool === 'bucket') {
     floodFill(Math.floor(x), Math.floor(y), colorPicker.value);
-    commit();
+    finishInk();
     return;
   }
 
@@ -319,13 +325,16 @@ function stopDrawing(e) {
   isDrawing = false;
   clearInterval(sprayTimer);
   ctx.beginPath();
-  commit();
+  finishInk();
 }
 
 function undo() {
   if (history.length < 2) return;
   history.pop();
-  ctx.putImageData(history[history.length - 1], 0, 0);
+  const previous = history[history.length - 1];
+  ctx.putImageData(previous.image, 0, 0);
+  setZones(structuredClone(previous.zones));
+  refreshPlan();
   scheduleSave();
 }
 
@@ -346,7 +355,10 @@ lineWidthInput.addEventListener('input', () => {
 undoBtn.addEventListener('click', undo);
 
 clearBtn.addEventListener('click', () => {
+  if (!confirm('Biztosan törlöd az egész tervet? A rajz, az összes növény, terület és a kosár tartalma is törlődik.')) return;
   clearCanvas();
+  clearPlan();
+  refreshPlan();
   commit();
 });
 

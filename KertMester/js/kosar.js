@@ -2,9 +2,11 @@ const PLAN_KEY = 'kertmester-terv';
 const DRAWING_KEY = 'kertmester-rajz';
 
 function readPlan() {
-  const empty = { garden: { length: 15, width: 10 }, items: [], zones: [], extras: {}, nextId: 1 };
+  const empty = { garden: { length: 15, width: 10 }, items: [], zones: [], extras: {}, mature: false, nextId: 1 };
   try {
-    return { ...empty, ...JSON.parse(localStorage.getItem(PLAN_KEY)) };
+    const saved = { ...empty, ...JSON.parse(localStorage.getItem(PLAN_KEY)) };
+    saved.zones = saved.zones.map((zone) => (zone.rings ? zone : { ...zone, rings: [zone.points], filled: true }));
+    return saved;
   } catch {
     return empty;
   }
@@ -33,8 +35,24 @@ function setGarden(length, width) {
     item.y = clamp(item.y, 0, width);
   });
   plan.zones.forEach((zone) => {
-    zone.points = zone.points.map((point) => ({ x: clamp(point.x, 0, length), y: clamp(point.y, 0, width) }));
+    zone.rings = zone.rings.map((ring) => ring.map((point) => ({ x: clamp(point.x, 0, length), y: clamp(point.y, 0, width) })));
   });
+  savePlan();
+}
+
+function clearPlan() {
+  plan.items = [];
+  plan.zones = [];
+  plan.extras = {};
+  savePlan();
+}
+
+function isMature() {
+  return plan.mature;
+}
+
+function setMature(value) {
+  plan.mature = value;
   savePlan();
 }
 
@@ -63,8 +81,12 @@ function getZones() {
   return plan.zones;
 }
 
-function addZone(productId, points) {
-  plan.zones.push({ id: plan.nextId++, productId, points });
+function createZone(productId, rings, filled) {
+  return { id: plan.nextId++, productId, filled, rings };
+}
+
+function setZones(zones) {
+  plan.zones = zones;
   savePlan();
 }
 
@@ -76,7 +98,7 @@ function removeZone(id) {
 function getZoneArea(productId) {
   return plan.zones
     .filter((zone) => zone.productId === productId)
-    .reduce((sum, zone) => sum + polygonArea(zone.points), 0);
+    .reduce((sum, zone) => sum + ringsArea(zone.rings), 0);
 }
 
 function getExtraCount(productId) {
@@ -126,13 +148,15 @@ function removeProduct(productId) {
 function getCartSummary(productsById) {
   const quantities = getQuantities();
   let count = 0;
-  let total = 0;
+  let subtotal = 0;
   Object.keys(quantities).forEach((id) => {
     if (!productsById[id]) return;
     count += quantities[id];
-    total += quantities[id] * productsById[id].Ar;
+    subtotal += quantities[id] * productsById[id].Ar;
   });
-  return { count, total };
+  const discounts = calculateDiscounts(quantities, productsById);
+  const saving = discounts.reduce((sum, discount) => sum + discount.amount, 0);
+  return { count, subtotal, discounts, saving, total: subtotal - saving };
 }
 
 function saveDrawing(dataUrl) {

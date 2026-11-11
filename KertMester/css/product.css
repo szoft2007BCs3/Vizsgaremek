@@ -12,3 +12,12 @@
   font-size: 1rem;
   line-height: 1;
 }
+
+.product-icon.has-svg {
+  background: var(--butter);
+}
+
+.product-icon svg {
+  width: 82%;
+  height: 82%;
+}

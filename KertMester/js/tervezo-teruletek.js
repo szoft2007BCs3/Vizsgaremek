@@ -3,56 +3,27 @@ const zoneTags = document.getElementById('zoneTags');
 const zoneGroup = document.getElementById('zoneGroup');
 const zoneSwatch = document.getElementById('zoneSwatch');
 const zoneName = document.getElementById('zoneName');
-const zoneRectBtn = document.getElementById('zoneRectBtn');
+const zoneFillBtn = document.getElementById('zoneFillBtn');
 const zoneExitBtn = document.getElementById('zoneExitBtn');
+const zoneShapeButtons = document.querySelectorAll('[data-zone-shape]');
+const toolbar = document.querySelector('.toolbar');
 
 const MIN_ZONE_AREA = 0.5;
 const MIN_POINT_DISTANCE = 3;
 const SIMPLIFY_TOLERANCE = 2;
+const MIN_LABEL_SIZE = 4;
+const INK_ALPHA = 64;
+const MAX_INK_SAMPLES = 4;
 
 let zoneProduct = null;
-
-function distanceToSegment(point, a, b) {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const lengthSquared = dx * dx + dy * dy;
-  const t = lengthSquared ? clamp(((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared, 0, 1) : 0;
-  return Math.hypot(point.x - (a.x + t * dx), point.y - (a.y + t * dy));
-}
-
-function simplifyPoints(points, tolerance) {
-  if (points.length < 3) return points;
-  const last = points.length - 1;
-  let farthest = 0;
-  let index = 0;
-  for (let i = 1; i < last; i++) {
-    const distance = distanceToSegment(points[i], points[0], points[last]);
-    if (distance > farthest) {
-      farthest = distance;
-      index = i;
-    }
-  }
-  if (farthest <= tolerance) return [points[0], points[last]];
-  return [...simplifyPoints(points.slice(0, index + 1), tolerance).slice(0, -1), ...simplifyPoints(points.slice(index), tolerance)];
-}
-
-function rectanglePoints(a, b) {
-  return [a, { x: b.x, y: a.y }, b, { x: a.x, y: b.y }];
-}
-
-function polygonCenter(points) {
-  const xs = points.map((point) => point.x);
-  const ys = points.map((point) => point.y);
-  return {
-    x: (Math.min(...xs) + Math.max(...xs)) / 2,
-    y: (Math.min(...ys) + Math.max(...ys)) / 2,
-    width: Math.max(...xs) - Math.min(...xs),
-    height: Math.max(...ys) - Math.min(...ys)
-  };
-}
+let zoneShape = 'freehand';
 
 function toPointsAttribute(points) {
   return points.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ');
+}
+
+function toPathData(rings) {
+  return rings.map((ring) => `M${toPointsAttribute(ring).replaceAll(' ', 'L')}Z`).join('');
 }
 
 function patternMarkup(productId) {
@@ -62,21 +33,23 @@ function patternMarkup(productId) {
 }
 
 function zoneMarkup(zone) {
+  const { length, width } = getGarden();
   const look = AREA_PRODUCTS[zone.productId];
-  const box = polygonCenter(zone.points);
-  const size = Math.min(box.width / (look.label.length * 0.62), box.height * 0.3, 4);
-  const area = formatArea(polygonArea(zone.points));
+  const spot = findLabelSpot(zone.rings);
+  const maxSize = Math.max(MIN_LABEL_SIZE, Math.max(length, width) / 40);
+  const size = Math.min(spot.width / (look.label.length * 0.62), (spot.bounds.maxY - spot.bounds.minY) * 0.2, maxSize);
+  const fill = zone.filled ? `url(#pattern-${zone.productId})` : 'none';
 
   return `<g>
-    <polygon class="zone-shape" points="${toPointsAttribute(zone.points)}" fill="url(#pattern-${zone.productId})" stroke="${look.mark}"/>
-    <text class="zone-label" x="${box.x.toFixed(2)}" y="${(box.y - size * 0.1).toFixed(2)}" font-size="${size.toFixed(2)}">${look.label}</text>
-    <text class="zone-label" x="${box.x.toFixed(2)}" y="${(box.y + size * 0.9).toFixed(2)}" font-size="${(size * 0.65).toFixed(2)}">${area}</text>
+    <path class="zone-shape" d="${toPathData(zone.rings)}" fill-rule="evenodd" fill="${fill}" stroke="${look.mark}"/>
+    <text class="zone-label" x="${spot.x.toFixed(2)}" y="${(spot.y + size * 0.3).toFixed(2)}" font-size="${size.toFixed(2)}">${look.label}</text>
+    <text class="zone-label" x="${spot.x.toFixed(2)}" y="${(spot.y + size * 1.2).toFixed(2)}" font-size="${(size * 0.65).toFixed(2)}">${formatArea(ringsArea(zone.rings))}</text>
   </g>`;
 }
 
 function createZoneRemoveButton(zone) {
   const { length, width } = getGarden();
-  const top = zone.points.reduce((best, point) => (point.y < best.y ? point : best));
+  const top = zone.rings.flat().reduce((best, point) => (point.y < best.y ? point : best));
   const button = createElement('button', 'zone-remove', '×');
   button.type = 'button';
   button.dataset.id = zone.id;
@@ -96,13 +69,98 @@ function renderZones() {
   zoneTags.replaceChildren(...zones.map(createZoneRemoveButton));
 }
 
+function insertZone(productId, ring, filled) {
+  const zones = getZones();
+  const shapeBounds = ringsBounds([ring]);
+  const nearby = zones.filter((zone) => boundsOverlap(ringsBounds(zone.rings), shapeBounds));
+  const raster = createRaster(mergeBounds([shapeBounds, ...nearby.map((zone) => ringsBounds(zone.rings))]));
+  const shapeMask = rasterizeRings(raster, [ring]);
+
+  const replaced = [];
+  const pieces = [];
+  let mergedMask = shapeMask;
+
+  nearby.forEach((zone) => {
+    const zoneMask = rasterizeRings(raster, zone.rings);
+    if (!masksOverlap(zoneMask, shapeMask)) return;
+    replaced.push(zone);
+    if (zone.productId === productId) {
+      mergedMask = unionMasks(mergedMask, zoneMask);
+    } else {
+      maskToShapes(raster, subtractMask(zoneMask, shapeMask), MIN_ZONE_AREA).forEach((rings) => {
+        pieces.push(createZone(zone.productId, rings, zone.filled));
+      });
+    }
+  });
+
+  const created = replaced.length
+    ? maskToShapes(raster, mergedMask, MIN_ZONE_AREA).map((rings) => createZone(productId, rings, filled))
+    : [createZone(productId, [ring], filled)];
+
+  setZones([...zones.filter((zone) => !replaced.includes(zone)), ...pieces, ...created]);
+}
+
+function createInkMask(raster, image) {
+  const { minX, minY, cell, cols, rows } = raster;
+  const mask = new Uint8Array(cols * rows);
+  const cellPixels = cell * pixelsPerMeter;
+  const samples = Math.min(MAX_INK_SAMPLES, Math.max(1, Math.ceil(cellPixels)));
+
+  for (let row = 0; row < rows; row++) {
+    for (let column = 0; column < cols; column++) {
+      search: for (let i = 0; i < samples; i++) {
+        for (let j = 0; j < samples; j++) {
+          const x = Math.floor((minX + (column + (j + 0.5) / samples) * cell) * pixelsPerMeter);
+          const y = Math.floor((minY + (row + (i + 0.5) / samples) * cell) * pixelsPerMeter);
+          if (x < 0 || y < 0 || x >= image.width || y >= image.height) continue;
+          if (image.data[(y * image.width + x) * 4 + 3] >= INK_ALPHA) {
+            mask[row * cols + column] = 1;
+            break search;
+          }
+        }
+      }
+    }
+  }
+  return mask;
+}
+
+function carveZonesWithInk() {
+  const zones = getZones();
+  if (!zones.length) return;
+  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const result = [];
+  let changed = false;
+
+  zones.forEach((zone) => {
+    const raster = createRaster(ringsBounds(zone.rings));
+    const zoneMask = rasterizeRings(raster, zone.rings);
+    const inkMask = createInkMask(raster, image);
+    if (!masksOverlap(zoneMask, inkMask)) {
+      result.push(zone);
+      return;
+    }
+    changed = true;
+    maskToShapes(raster, subtractMask(zoneMask, inkMask), MIN_ZONE_AREA).forEach((rings) => {
+      result.push(createZone(zone.productId, rings, zone.filled));
+    });
+  });
+
+  if (changed) setZones(result);
+}
+
 function updatePreview(points) {
   zonesLayer.querySelector('.zone-preview').setAttribute('points', toPointsAttribute(points));
 }
 
+function keepSquare(start, point) {
+  const size = Math.max(Math.abs(point.x - start.x), Math.abs(point.y - start.y));
+  return { x: start.x + Math.sign(point.x - start.x) * size, y: start.y + Math.sign(point.y - start.y) * size };
+}
+
 function createZoneDrag(e) {
   const look = AREA_PRODUCTS[zoneProduct.ID];
-  const isRectangle = zoneRectBtn.getAttribute('aria-pressed') === 'true';
+  const shape = zoneShape;
+  const filled = zoneFillBtn.getAttribute('aria-pressed') === 'true';
   const start = pointToGarden(e.clientX, e.clientY);
   const preview = zonesLayer.querySelector('.zone-preview');
   let points = [start];
@@ -112,20 +170,26 @@ function createZoneDrag(e) {
 
   return {
     move(event) {
-      const point = pointToGarden(event.clientX, event.clientY);
-      const previous = points[points.length - 1];
-      if (isRectangle) {
+      let point = pointToGarden(event.clientX, event.clientY);
+      if (shape !== 'freehand' && event.shiftKey) point = keepSquare(start, point);
+
+      if (shape === 'rectangle') {
         points = rectanglePoints(start, point);
-      } else if (Math.hypot(point.x - previous.x, point.y - previous.y) * view.zoom >= MIN_POINT_DISTANCE) {
-        points.push(point);
+      } else if (shape === 'ellipse') {
+        points = ellipsePoints(start, point);
+      } else {
+        const previous = points[points.length - 1];
+        if (Math.hypot(point.x - previous.x, point.y - previous.y) * view.zoom >= MIN_POINT_DISTANCE) points.push(point);
       }
       updatePreview(points);
     },
     end() {
       updatePreview([]);
-      const shape = isRectangle ? points : simplifyPoints(points, SIMPLIFY_TOLERANCE / view.zoom);
-      if (shape.length < 3 || polygonArea(shape) < MIN_ZONE_AREA) return;
-      addZone(zoneProduct.ID, shape);
+      const ring = shape === 'freehand' ? simplifyPoints(points, SIMPLIFY_TOLERANCE / view.zoom) : points;
+      if (ring.length < 3 || ringsArea([ring]) < MIN_ZONE_AREA) return;
+      insertZone(zoneProduct.ID, ring, filled);
+      carveZonesWithInk();
+      commit();
       refreshPlan();
     }
   };
@@ -139,19 +203,28 @@ function activateZoneTool(product) {
   zoneSwatch.style.borderColor = look.mark;
   zoneName.textContent = look.label;
   zoneGroup.hidden = false;
+  toolbar.classList.add('zone-mode');
   document.querySelectorAll('.toolbox-product').forEach((item) => item.classList.toggle('active', Number(item.dataset.id) === product.ID));
 }
 
 window.addEventListener('tool-changed', () => {
   if (currentTool === 'zone') return;
   zoneGroup.hidden = true;
+  toolbar.classList.remove('zone-mode');
   document.querySelectorAll('.toolbox-product.active').forEach((item) => item.classList.remove('active'));
 });
 
-zoneRectBtn.addEventListener('click', () => {
-  const isOn = zoneRectBtn.getAttribute('aria-pressed') === 'true';
-  zoneRectBtn.setAttribute('aria-pressed', String(!isOn));
-  zoneRectBtn.classList.toggle('active', !isOn);
+zoneShapeButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    zoneShape = button.dataset.zoneShape;
+    zoneShapeButtons.forEach((other) => other.classList.toggle('active', other === button));
+  });
+});
+
+zoneFillBtn.addEventListener('click', () => {
+  const isOn = zoneFillBtn.getAttribute('aria-pressed') === 'true';
+  zoneFillBtn.setAttribute('aria-pressed', String(!isOn));
+  zoneFillBtn.classList.toggle('active', !isOn);
 });
 
 zoneExitBtn.addEventListener('click', () => setTool('pen'));
@@ -160,6 +233,7 @@ zoneTags.addEventListener('click', (e) => {
   const button = e.target.closest('.zone-remove');
   if (!button) return;
   removeZone(Number(button.dataset.id));
+  commit();
   refreshPlan();
 });
 

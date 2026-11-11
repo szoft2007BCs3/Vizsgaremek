@@ -23,10 +23,17 @@ function createElement(tag, className, text) {
   return element;
 }
 
-function createProductIcon(categoryId) {
-  const look = CATEGORY_LOOK[categoryId] || DEFAULT_LOOK;
-  const icon = createElement('span', 'product-icon', look.icon);
-  icon.style.background = look.color;
+function createProductIcon(product) {
+  const look = CATEGORY_LOOK[product.Kategoria_ID] || DEFAULT_LOOK;
+  const icon = createElement('span', 'product-icon');
+  if (PRODUCT_SVG[product.ID]) {
+    icon.classList.add('has-svg');
+    icon.style.borderColor = look.color;
+    icon.innerHTML = `<svg viewBox="0 0 32 32" aria-hidden="true">${PRODUCT_SVG[product.ID]}</svg>`;
+  } else {
+    icon.textContent = PRODUCT_EMOJI[product.ID] || look.icon;
+    icon.style.background = look.color;
+  }
   return icon;
 }
 
@@ -42,11 +49,15 @@ function formatArea(area) {
   return `${areaFormat.format(area)} m²`;
 }
 
-function polygonArea(points) {
+function signedRingArea(ring) {
   let sum = 0;
-  points.forEach((point, i) => {
-    const next = points[(i + 1) % points.length];
+  ring.forEach((point, i) => {
+    const next = ring[(i + 1) % ring.length];
     sum += point.x * next.y - next.x * point.y;
   });
-  return Math.abs(sum) / 2;
+  return sum / 2;
+}
+
+function ringsArea(rings) {
+  return Math.abs(rings.reduce((sum, ring) => sum + signedRingArea(ring), 0));
 }
