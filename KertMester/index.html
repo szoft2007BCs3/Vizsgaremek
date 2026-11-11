@@ -8,10 +8,9 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/nav.css">
-  <link rel="stylesheet" href="css/content.css">
   <link rel="stylesheet" href="css/footer.css">
-  <link rel="stylesheet" href="css/ai-guide.css">
   <link rel="stylesheet" href="css/panel.css">
+  <link rel="stylesheet" href="css/fooldal.css">
   <link rel="icon" type="image/png" href="imgs/icon.png"/>
 </head>
 
@@ -59,14 +58,89 @@
     </div>
   </nav>
 
-  <main class="content">
-    <section class="panel">
-      <h2 class="panel-title">Bemutatkozás</h2>
+  <main class="home">
+    <section class="hero">
+      <div class="hero-text">
+        <p class="hero-kicker">Pósfa · Vas vármegye</p>
+        <h1>A kerted ott kezdődik, ahol <em>megrajzolod</em>.</h1>
+        <p class="hero-lead"></p>
+        <div class="hero-actions">
+          <a class="btn-hero" href="tervezo.html">Kertet tervezek</a>
+          <a class="btn-hero btn-hero-ghost" href="webshop.html">Webshop</a>
+        </div>
+      </div>
     </section>
-    <section class="panel">
+
+    <div class="home-grid">
+      <section class="panel about" id="bemutatkozas">
+        <h2 class="panel-title">Bemutatkozás</h2>
+        <p class="about-lead">IDK</p>
+        <p>Beutatkozó szöveg</p>
+        <p>Beutatkozó szöveg</p>
+        <ul class="about-steps">
+          <li><span class="step-icon">✏️</span><strong>Rajzold meg</strong><small>Telekméret, gyep, tó, ösvény: ujjal vagy egérrel.</small></li>
+          <li><span class="step-icon">🌳</span><strong>Lásd, ahogy kinő</strong><small>Csemete vagy kifejlett méret, lombárnyékkal.</small></li>
+          <li><span class="step-icon">🛒</span><strong>Rendeld meg</strong><small>A terv alapján kész kosár, utánvéttel vagy kártyával.</small></li>
+        </ul>
+
+        <dl class="about-facts">
+          <div><dt>500 × 500 m</dt><dd>legnagyobb tervezhető kert</dd></div>
+          <div><dt>100</dt><dd>termék a webshopban</dd></div>
+          <div><dt>15</dt><dd>folyamatos ajánlat</dd></div>
+        </dl>
+      </section>
+
+      <section class="panel map-panel">
+        <h2 class="panel-title">Itt találsz minket</h2>
+        <p class="map-address"><strong>Székhelyünk:</strong> Pósfa, Vas megye</p>
+        <div class="map-frame">
+          <iframe title="Kertmester székhelye, Pósfa" loading="lazy" referrerpolicy="no-referrer"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=16.80%2C47.30%2C16.91%2C47.355&amp;layer=mapnik&amp;marker=47.327%2C16.853"></iframe>
+        </div>
+        <a class="map-link" href="https://www.openstreetmap.org/?mlat=47.327&amp;mlon=16.853#map=14/47.327/16.853" target="_blank" rel="noopener">Nagyobb térkép megnyitása →</a>
+      </section>
+    </div>
+
+    <section class="panel gallery" id="galeria">
       <h2 class="panel-title">Galéria</h2>
+      <p class="gallery-intro">Már kész tervek</p>
+
+      <div class="gallery-grid">
+        <figure class="shot shot-big">
+          <button type="button" class="shot-open" data-src="imgs/minta-1.svg" data-title="Családi előkert" aria-label="Családi előkert megnyitása">
+            <img src="imgs/minta-1.svg" alt="Mintaterv: családi előkert tóval, virágágyásokkal és fákkal" loading="lazy">
+            <span class="stamp">Mintakép</span>
+            <figcaption><strong>Családi előkert</strong><small>14 × 10 m · gyep, tó, két díszfa</small></figcaption>
+          </button>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="shot-open" data-src="imgs/minta-2.svg" data-title="Teraszos pihenőkert" aria-label="Teraszos pihenőkert megnyitása">
+            <img src="imgs/minta-2.svg" alt="Mintaterv: teraszos pihenőkert fapadlóval és kerti asztallal" loading="lazy">
+            <span class="stamp">Mintakép</span>
+            <figcaption><strong>Teraszos pihenőkert</strong><small>20 × 12 m · fapadló, ösvény, sövény</small></figcaption>
+          </button>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="shot-open" data-src="imgs/minta-3.svg" data-title="Virágos sorházkert" aria-label="Virágos sorházkert megnyitása">
+            <img src="imgs/minta-3.svg" alt="Mintaterv: hosszú, keskeny sorházkert virágágyásokkal" loading="lazy">
+            <span class="stamp">Mintakép</span>
+            <figcaption><strong>Virágos sorházkert</strong><small>25 × 8 m · négy színű ágyás</small></figcaption>
+          </button>
+        </figure>
+        <a class="shot shot-cta" href="tervezo.html">
+          <span class="cta-plus">+</span>
+          <strong>Ide kerülhet a te kerted</strong>
+          <small>Rajzold meg a tervezőben, és mutasd meg nekünk.</small>
+        </a>
+      </div>
     </section>
   </main>
+
+  <dialog class="lightbox" id="lightbox">
+    <form method="dialog"><button class="lightbox-close" aria-label="Bezárás">×</button></form>
+    <img id="lightboxImg" alt="">
+    <p id="lightboxTitle"></p>
+  </dialog>
 
   <footer class="site-footer">
     <div class="footer-top">
@@ -89,7 +163,7 @@
         <ul>
           <li><a href="mailto:hello@kertmester.hu">hello@kertmester.hu</a></li>
           <li><a href="tel:+36301234567">+36 30 123 4567</a></li>
-          <li>Szombathely, Vas megye</li>
+          <li>Pósfa, Vas vármegye</li>
         </ul>
       </div>
     </div>
@@ -101,6 +175,7 @@
     </div>
   </footer>
   <script src="js/nav.js"></script>
+  <script src="js/fooldal.js"></script>
 </body>
 
 </html>

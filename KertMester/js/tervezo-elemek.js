@@ -56,6 +56,7 @@ function refreshPlan() {
 
 function placeProduct(product, x, y) {
   addPlacedItem(product.ID, x, y);
+  commitPlan();
   refreshPlan();
 }
 
@@ -148,7 +149,10 @@ itemsLayer.addEventListener('pointermove', (e) => {
 
 function endItemDrag() {
   if (!draggedItem) return;
+  const moved = getPlacedItems().find((item) => item.id === draggedItem.id);
+  const changed = moved && (moved.x !== draggedItem.x || moved.y !== draggedItem.y);
   movePlacedItem(draggedItem.id, draggedItem.x, draggedItem.y);
+  if (changed) commitPlan();
   draggedItem.element.classList.remove('is-blocked');
   hideSpacingGuides();
   draggedItem = null;
@@ -161,6 +165,7 @@ itemsLayer.addEventListener('click', (e) => {
   const remove = e.target.closest('.placed-remove');
   if (!remove) return;
   removePlacedItem(Number(remove.closest('.placed-item').dataset.id));
+  commitPlan();
   refreshPlan();
 });
 
@@ -168,6 +173,7 @@ itemsLayer.addEventListener('keydown', (e) => {
   const element = e.target.closest('.placed-item');
   if (!element || (e.key !== 'Delete' && e.key !== 'Backspace')) return;
   removePlacedItem(Number(element.dataset.id));
+  commitPlan();
   refreshPlan();
 });
 

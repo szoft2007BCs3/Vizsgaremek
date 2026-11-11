@@ -181,9 +181,7 @@ async function initShop() {
 }
 
 orderBtn.addEventListener('click', () => {
-  const summary = getCartSummary(productsById);
-  const saving = summary.saving ? `\nMegtakarítás: ${formatPrice(summary.saving)}` : '';
-  alert(`Köszönjük a rendelésedet!\n\nTermékek: ${summary.count} db${saving}\nVégösszeg: ${formatPrice(summary.total)}`);
+  window.location.href = 'rendeles.html';
 });
 
 searchInput.addEventListener('input', renderProducts);

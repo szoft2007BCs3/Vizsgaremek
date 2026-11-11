@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kertmester — Megrendelés</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/nav.css">
+  <link rel="stylesheet" href="css/panel.css">
+  <link rel="stylesheet" href="css/product.css">
+  <link rel="stylesheet" href="css/shop.css">
+  <link rel="stylesheet" href="css/profil.css">
+  <link rel="stylesheet" href="css/rendeles.css">
+  <link rel="stylesheet" href="css/footer.css">
+  <link rel="icon" type="image/png" href="imgs/icon.png"/>
+  <script src="js/adatok.js" defer></script>
+  <script src="js/ikonok.js" defer></script>
+  <script src="js/segedek.js" defer></script>
+  <script src="js/teruletek.js" defer></script>
+  <script src="js/ajanlatok.js" defer></script>
+  <script src="js/kosar.js" defer></script>
+  <script src="js/kartya.js" defer></script>
+  <script src="js/rendeles.js" defer></script>
+</head>
+
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="brand" aria-label="Kertmester — kezdőlap">
+        <img class="brand-mark logo-img" src="imgs/icon.png" alt="Logo">
+        <span class="brand-name">Kertmester</span>
+      </a>
+
+      <button class="hamburger" id="hamburgerBtn" aria-expanded="false" aria-controls="siteNav"
+        aria-label="Menü megnyitása">
+        <span class="hamburger-box">
+          <span class="hamburger-line line1"></span>
+          <span class="hamburger-line line2"></span>
+          <span class="hamburger-line line3"></span>
+        </span>
+        <span class="hamburger-label">Menü</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="nav-overlay" id="navOverlay"></div>
+
+  <nav class="site-nav" id="siteNav" aria-hidden="true">
+    <div class="nav-top">
+      <span class="nav-brand">Kertmester</span>
+      <button class="nav-close" id="navCloseBtn" aria-label="Menü bezárása">
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <ol class="nav-list">
+      <li style="--i:0"><a href="index.html" data-nav>Főoldal</a></li>
+      <li style="--i:1"><a href="tervezo.html" data-nav>Tervező</a></li>
+      <li style="--i:2"><a href="webshop.html" data-nav>Webshop</a></li>
+      <li style="--i:3"><a href="profil.html" data-nav>Profil</a></li>
+    </ol>
+
+    <div class="nav-foliage" aria-hidden="true">
+        <img class="logo-img logo-img--ghost" src="imgs/icon.png" alt="Logo">
+    </div>
+  </nav>
+
+  
+
+<main class="checkout">
+    <div class="checkout-empty panel" id="checkoutEmpty" hidden>
+      <h1 class="panel-title">A kosarad üres</h1>
+      <p>Válassz néhány terméket a webshopban, vagy rakd össze a kertedet a tervezőben.</p>
+      <a class="btn-submit btn-link" href="webshop.html">Vissza a webshopba</a>
+    </div>
+
+    <form class="checkout-form" id="checkoutForm" novalidate hidden>
+      <h1 class="checkout-title">Megrendelés</h1>
+
+      <section class="panel checkout-section">
+        <h2 class="panel-title"><span class="step-no">1</span> Kapcsolattartó</h2>
+        <div class="field-grid">
+          <label class="field span-2"><span>Teljes név</span><input name="name" autocomplete="name" required minlength="3"></label>
+          <label class="field"><span>E-mail cím</span><input name="email" type="email" autocomplete="email" required></label>
+          <label class="field"><span>Telefonszám</span><input name="phone" type="tel" autocomplete="tel" required pattern="[0-9+ \(\)\/\-]{7,}" placeholder="+36 30 123 4567"></label>
+        </div>
+      </section>
+
+      <section class="panel checkout-section">
+        <h2 class="panel-title"><span class="step-no">2</span> Szállítási cím</h2>
+        <div class="field-grid">
+          <label class="field"><span>Irányítószám</span><input name="zip" inputmode="numeric" autocomplete="postal-code" required pattern="[0-9]{4}" maxlength="4"></label>
+          <label class="field"><span>Település</span><input name="city" autocomplete="address-level2" required></label>
+          <label class="field span-2"><span>Utca, házszám</span><input name="street" autocomplete="address-line1" required></label>
+          <label class="field span-2"><span>Megjegyzés a futárnak (nem kötelező)</span><input name="note" placeholder="Kapucsengő, emelet, átvétel időpontja…"></label>
+        </div>
+      </section>
+
+      <section class="panel checkout-section">
+        <h2 class="panel-title"><span class="step-no">3</span> Számlázási cím</h2>
+        <label class="check-row"><input type="checkbox" id="sameBilling" checked><span>Megegyezik a szállítási címmel</span></label>
+        <div class="field-grid" id="billingFields" hidden>
+          <label class="field span-2"><span>Név / cégnév</span><input name="billName" autocomplete="organization"></label>
+          <label class="field"><span>Irányítószám</span><input name="billZip" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"></label>
+          <label class="field"><span>Település</span><input name="billCity"></label>
+          <label class="field span-2"><span>Utca, házszám</span><input name="billStreet"></label>
+          <label class="field span-2"><span>Adószám (nem kötelező)</span><input name="taxNumber" placeholder="12345678-1-12"></label>
+        </div>
+      </section>
+
+      <section class="panel checkout-section">
+        <h2 class="panel-title"><span class="step-no">4</span> Fizetési mód</h2>
+        <div class="pay-options">
+          <label class="pay-option">
+            <input type="radio" name="payment" value="cod" checked>
+            <span class="pay-option-body"><span class="pay-option-icon">💵</span><strong>Utánvét</strong><small>Fizetés a futárnak átvételkor · +590 Ft kezelési díj</small></span>
+          </label>
+          <label class="pay-option">
+            <input type="radio" name="payment" value="card">
+            <span class="pay-option-body"><span class="pay-option-icon">💳</span><strong>Bankkártya</strong><small>Biztonságos fizetés a következő lépésben · nincs felár</small></span>
+          </label>
+        </div>
+      </section>
+    </form>
+
+    <aside class="panel checkout-summary" id="checkoutSummary" hidden>
+      <h2 class="panel-title">Rendelésed</h2>
+      <ul class="summary-items" id="summaryItems"></ul>
+      <ul class="summary-discounts" id="summaryDiscounts"></ul>
+      <dl class="summary-totals">
+        <div class="cart-row"><dt>Részösszeg</dt><dd id="sumSubtotal"></dd></div>
+        <div class="cart-row cart-row-saving" id="sumSavingRow"><dt>Kedvezmények</dt><dd id="sumSaving"></dd></div>
+        <div class="cart-row"><dt>Szállítás (GLS futár)</dt><dd id="sumShipping"></dd></div>
+        <div class="cart-row" id="sumCodRow"><dt>Utánvét kezelési díj</dt><dd>590 Ft</dd></div>
+        <div class="cart-row cart-row-total"><dt>Fizetendő</dt><dd id="sumTotal"></dd></div>
+      </dl>
+      <p class="summary-note">Ingyenes szállítás 30 000 Ft felett.</p>
+      <button type="submit" form="checkoutForm" class="btn-order" id="placeOrderBtn">Megrendelem</button>
+      <a class="summary-back" href="webshop.html">← Vissza a kosárhoz</a>
+    </aside>
+
+    <section class="panel order-done" id="orderDone" hidden>
+      <div class="done-mark" aria-hidden="true">✓</div>
+      <h1 class="panel-title">Köszönjük a rendelésedet!</h1>
+      <p id="doneText"></p>
+      <a class="btn-submit btn-link" href="webshop.html">Vissza a webshopba</a>
+    </section>
+  </main>
+
+  <div class="pay-overlay" id="payOverlay" hidden>
+    <div class="pay-modal" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+      <button type="button" class="pay-close" id="payClose" aria-label="Bezárás">×</button>
+      <h2 id="payTitle">Biztonságos kártyás fizetés</h2>
+
+      <div class="pay-grid">
+        <div class="card-scene" aria-hidden="true">
+          <div class="credit-card" id="creditCard" data-brand="unknown">
+            <div class="card-face card-front">
+              <div class="card-top">
+                <span class="card-chip"></span>
+                <span class="card-brand" id="cardBrandLogo"></span>
+              </div>
+              <div class="card-number" id="cardNumberView">•••• •••• •••• ••••</div>
+              <div class="card-bottom">
+                <div><small>Kártyabirtokos</small><span id="cardNameView">NÉV NÉV</span></div>
+                <div><small>Lejárat</small><span id="cardExpiryView">HH/ÉÉ</span></div>
+              </div>
+            </div>
+            <div class="card-face card-back">
+              <div class="card-stripe"></div>
+              <div class="card-sign"><span>CVC</span><strong id="cardCvcView">•••</strong></div>
+              <span class="card-brand card-brand-back" id="cardBrandLogoBack"></span>
+            </div>
+          </div>
+          <p class="card-type" id="cardTypeText">Kártya típusa: add meg a számot</p>
+        </div>
+
+        <form class="card-form" id="cardForm" novalidate autocomplete="off">
+          <label class="field"><span>Kártyaszám</span><input id="cardNumber" inputmode="numeric" autocomplete="off" placeholder="1234 5678 9012 3456" maxlength="23"><em class="field-error" data-for="cardNumber"></em></label>
+          <label class="field"><span>Kártyabirtokos neve</span><input id="cardName" autocomplete="off" placeholder="Minta János" maxlength="26"><em class="field-error" data-for="cardName"></em></label>
+          <div class="field-grid">
+            <label class="field"><span>Lejárat (HH/ÉÉ)</span><input id="cardExpiry" inputmode="numeric" autocomplete="off" placeholder="HH/ÉÉ" maxlength="5"><em class="field-error" data-for="cardExpiry"></em></label>
+            <label class="field"><span>CVC / CVV</span><input id="cardCvc" inputmode="numeric" autocomplete="off" placeholder="123" maxlength="4"><em class="field-error" data-for="cardCvc"></em></label>
+          </div>
+          <button type="submit" class="btn-order pay-submit" id="payBtn"><span id="payBtnText">Fizetek</span><span class="spinner" aria-hidden="true"></span></button>
+          <p class="pay-demo">🔒 Bemutató oldal: valódi fizetés nem történik, a megadott kártyaadatokat nem küldjük el és nem mentjük el sehová.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="footer-name">Kertmester</span>
+      </div>
+
+      <div class="footer-col">
+        <h3>Navigáció</h3>
+        <ul>
+          <li><a href="index.html">Főoldal</a></li>
+          <li><a href="tervezo.html">Tervező</a></li>
+          <li><a href="webshop.html">Webshop</a></li>
+          <li><a href="profil.html">Profil</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h3>Elérhetőség</h3>
+        <ul>
+          <li><a href="mailto:hello@kertmester.hu">hello@kertmester.hu</a></li>
+          <li><a href="tel:+36301234567">+36 30 123 4567</a></li>
+          <li>Pósfa, Vas vármegye</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-divider" aria-hidden="true"></div>
+
+    <div class="footer-bottom">
+      <span>© 2026 Kertmester</span>
+    </div>
+  </footer>
+
+  <script src="js/nav.js"></script>
+</body>
+
+</html>

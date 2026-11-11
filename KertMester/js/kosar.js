@@ -60,6 +60,11 @@ function getPlacedItems() {
   return plan.items;
 }
 
+function setPlacedItems(items) {
+  plan.items = items;
+  savePlan();
+}
+
 function addPlacedItem(productId, x, y) {
   plan.items.push({ id: plan.nextId++, productId, x, y });
   savePlan();

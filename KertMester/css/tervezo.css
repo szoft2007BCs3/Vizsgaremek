@@ -700,3 +700,7 @@ body.is-dragging {
 .placed-item.is-blocked .product-icon {
   box-shadow: 0 0 0 3px #b3382a;
 }
+
+.zone-tags.is-moving .zone-remove {
+  opacity: 0;
+}

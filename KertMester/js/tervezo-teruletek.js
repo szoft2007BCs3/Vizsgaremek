@@ -40,7 +40,7 @@ function zoneMarkup(zone) {
   const size = Math.min(spot.width / (look.label.length * 0.62), (spot.bounds.maxY - spot.bounds.minY) * 0.2, maxSize);
   const fill = zone.filled ? `url(#pattern-${zone.productId})` : 'none';
 
-  return `<g>
+  return `<g data-id="${zone.id}">
     <path class="zone-shape" d="${toPathData(zone.rings)}" fill-rule="evenodd" fill="${fill}" stroke="${look.mark}"/>
     <text class="zone-label" x="${spot.x.toFixed(2)}" y="${(spot.y + size * 0.3).toFixed(2)}" font-size="${size.toFixed(2)}">${look.label}</text>
     <text class="zone-label" x="${spot.x.toFixed(2)}" y="${(spot.y + size * 1.2).toFixed(2)}" font-size="${(size * 0.65).toFixed(2)}">${formatArea(ringsArea(zone.rings))}</text>
@@ -69,12 +69,12 @@ function renderZones() {
   zoneTags.replaceChildren(...zones.map(createZoneRemoveButton));
 }
 
-function insertZone(productId, ring, filled) {
+function insertZone(productId, shapeRings, filled) {
   const zones = getZones();
-  const shapeBounds = ringsBounds([ring]);
+  const shapeBounds = ringsBounds(shapeRings);
   const nearby = zones.filter((zone) => boundsOverlap(ringsBounds(zone.rings), shapeBounds));
   const raster = createRaster(mergeBounds([shapeBounds, ...nearby.map((zone) => ringsBounds(zone.rings))]));
-  const shapeMask = rasterizeRings(raster, [ring]);
+  const shapeMask = rasterizeRings(raster, shapeRings);
 
   const replaced = [];
   const pieces = [];
@@ -95,7 +95,7 @@ function insertZone(productId, ring, filled) {
 
   const created = replaced.length
     ? maskToShapes(raster, mergedMask, MIN_ZONE_AREA).map((rings) => createZone(productId, rings, filled))
-    : [createZone(productId, [ring], filled)];
+    : [createZone(productId, shapeRings, filled)];
 
   setZones([...zones.filter((zone) => !replaced.includes(zone)), ...pieces, ...created]);
 }
@@ -187,9 +187,50 @@ function createZoneDrag(e) {
       updatePreview([]);
       const ring = shape === 'freehand' ? simplifyPoints(points, SIMPLIFY_TOLERANCE / view.zoom) : points;
       if (ring.length < 3 || ringsArea([ring]) < MIN_ZONE_AREA) return;
-      insertZone(zoneProduct.ID, ring, filled);
+      insertZone(zoneProduct.ID, [ring], filled);
       carveZonesWithInk();
-      commit();
+      commitPlan();
+      refreshPlan();
+    }
+  };
+}
+
+function findZoneAt(point) {
+  const zones = getZones();
+  for (let i = zones.length - 1; i >= 0; i--) {
+    const inside = zones[i].rings.filter((ring) => pointInRing(point, ring)).length;
+    if (inside % 2 === 1) return zones[i];
+  }
+  return null;
+}
+
+function createZoneMoveDrag(e, zone) {
+  const { length, width } = getGarden();
+  const bounds = ringsBounds(zone.rings);
+  const start = pointToGarden(e.clientX, e.clientY);
+  const group = zonesLayer.querySelector(`g[data-id="${zone.id}"]`);
+  let dx = 0;
+  let dy = 0;
+  zoneTags.classList.add('is-moving');
+
+  return {
+    move(event) {
+      const point = pointToGarden(event.clientX, event.clientY);
+      dx = clamp(point.x - start.x, -bounds.minX, length - bounds.maxX);
+      dy = clamp(point.y - start.y, -bounds.minY, width - bounds.maxY);
+      group.setAttribute('transform', `translate(${dx.toFixed(3)} ${dy.toFixed(3)})`);
+    },
+    end() {
+      zoneTags.classList.remove('is-moving');
+      if (Math.hypot(dx, dy) < 0.01) {
+        refreshPlan();
+        return;
+      }
+      const moved = zone.rings.map((ring) => ring.map((point) => ({ x: point.x + dx, y: point.y + dy })));
+      removeZone(zone.id);
+      insertZone(zone.productId, moved, zone.filled);
+      carveZonesWithInk();
+      commitPlan();
       refreshPlan();
     }
   };
@@ -233,7 +274,7 @@ zoneTags.addEventListener('click', (e) => {
   const button = e.target.closest('.zone-remove');
   if (!button) return;
   removeZone(Number(button.dataset.id));
-  commit();
+  commitPlan();
   refreshPlan();
 });
 

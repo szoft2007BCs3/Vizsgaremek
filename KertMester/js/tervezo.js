@@ -38,10 +38,12 @@ function pixelRatio() {
   return canvas.width / (canvas.clientWidth || canvas.width);
 }
 
-function pushHistory() {
+function pushHistory(reuseImage = false) {
   const limit = Math.max(3, Math.min(MAX_HISTORY, Math.floor(HISTORY_BUDGET / (canvas.width * canvas.height * 4))));
   while (history.length >= limit) history.shift();
-  history.push({ image: ctx.getImageData(0, 0, canvas.width, canvas.height), zones: structuredClone(getZones()) });
+  const last = history[history.length - 1];
+  const image = reuseImage && last ? last.image : ctx.getImageData(0, 0, canvas.width, canvas.height);
+  history.push({ image, zones: structuredClone(getZones()), items: structuredClone(getPlacedItems()) });
 }
 
 function persistDrawing() {
@@ -58,6 +60,10 @@ function scheduleSave() {
 function commit() {
   pushHistory();
   scheduleSave();
+}
+
+function commitPlan() {
+  pushHistory(true);
 }
 
 function finishInk() {
@@ -258,6 +264,15 @@ function setTool(tool) {
 }
 
 function startDrawing(e) {
+  if (e.button === 0 && currentTool === 'hand') {
+    const zone = findZoneAt(pointToGarden(e.clientX, e.clientY));
+    if (zone) {
+      e.preventDefault();
+      canvas.style.cursor = 'grabbing';
+      startDrag(e, createZoneMoveDrag(e, zone));
+      return;
+    }
+  }
   if (e.button === 1 || (e.button === 0 && currentTool === 'hand')) {
     e.preventDefault();
     startDrag(e, createPanDrag(e));
@@ -302,7 +317,10 @@ function draw(e) {
     dragHandler.move(e);
     return;
   }
-  if (!isDrawing) return;
+  if (!isDrawing) {
+    if (currentTool === 'hand') canvas.style.cursor = findZoneAt(pointToGarden(e.clientX, e.clientY)) ? 'move' : 'grab';
+    return;
+  }
   const { x, y } = getPoint(e);
   lastX = x;
   lastY = y;
@@ -319,6 +337,7 @@ function stopDrawing(e) {
   if (dragHandler) {
     dragHandler.end(e);
     dragHandler = null;
+    if (currentTool === 'hand') canvas.style.cursor = 'grab';
     return;
   }
   if (!isDrawing) return;
@@ -334,6 +353,7 @@ function undo() {
   const previous = history[history.length - 1];
   ctx.putImageData(previous.image, 0, 0);
   setZones(structuredClone(previous.zones));
+  setPlacedItems(structuredClone(previous.items));
   refreshPlan();
   scheduleSave();
 }
