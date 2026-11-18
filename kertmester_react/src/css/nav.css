@@ -1,0 +1,123 @@
+.nav-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.4s;
+  z-index: 40;
+}
+
+.nav-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.site-nav {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 26rem;
+  max-width: 100%;
+  height: 100%;
+  background: var(--butter);
+  color: var(--ink);
+  padding: 1.5rem;
+  overflow: hidden;
+  visibility: hidden;
+  transition: right 0.4s, visibility 0.4s;
+  z-index: 50;
+}
+
+.site-nav.is-open {
+  right: 0;
+  visibility: visible;
+  box-shadow: 0 0 2rem rgba(0, 0, 0, 0.4);
+}
+
+.nav-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--sage-line);
+}
+
+.nav-brand {
+  font-family: Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--forest);
+}
+
+.nav-close {
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: none;
+  border: 1px solid var(--forest);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.nav-close span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1rem;
+  height: 2px;
+  margin-left: -0.5rem;
+  background: var(--forest);
+}
+
+.nav-close span:first-child {
+  transform: rotate(45deg);
+}
+
+.nav-close span:last-child {
+  transform: rotate(-45deg);
+}
+
+.nav-list {
+  list-style: none;
+  margin: 1.5rem 0 0 0;
+  padding: 0;
+  counter-reset: szamlalo;
+}
+
+.nav-list li {
+  counter-increment: szamlalo;
+  border-bottom: 1px solid var(--moss);
+}
+
+.nav-list a {
+  display: block;
+  padding: 1rem 0;
+  font-family: Georgia, serif;
+  font-size: 1.6rem;
+  color: var(--forest);
+}
+
+.nav-list a::before {
+  content: counter(szamlalo, decimal-leading-zero);
+  margin-right: 1rem;
+  font-family: Arial, sans-serif;
+  font-size: 0.7rem;
+  color: var(--gold);
+}
+
+.nav-list a:hover {
+  color: var(--gold);
+}
+
+.nav-foliage {
+  position: absolute;
+  right: -3rem;
+  bottom: 2rem;
+  width: 12rem;
+  height: 12rem;
+  z-index: -1;
+}

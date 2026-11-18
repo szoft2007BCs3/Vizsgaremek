@@ -1,0 +1,77 @@
+.site-footer {
+  background: var(--forest-dark);
+  color: var(--butter);
+  padding: 3rem 1.25rem 1.5rem 1.25rem;
+}
+
+.footer-top,
+.footer-divider,
+.footer-bottom {
+  max-width: 72.5rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.footer-top {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 2rem;
+}
+
+.footer-name {
+  font-family: Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.footer-col h3 {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: var(--gold);
+}
+
+.footer-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-col li {
+  margin-bottom: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.footer-col a:hover {
+  color: var(--gold);
+}
+
+.footer-divider {
+  height: 1px;
+  margin-top: 2.5rem;
+  margin-bottom: 1.2rem;
+  background: var(--sage-line);
+}
+
+.footer-bottom {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 800px) {
+  .footer-top {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .footer-brand {
+    grid-column: 1 / 3;
+  }
+}
+
+@media (max-width: 500px) {
+  .footer-top {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-brand {
+    grid-column: 1;
+  }
+}

@@ -1,0 +1,97 @@
+.site-header {
+  background: linear-gradient(to right, var(--forest), var(--forest-dark));
+  color: var(--butter);
+}
+
+.header-inner {
+  max-width: 75rem;
+  height: 5.5rem;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.brand-mark {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.brand-name {
+  font-family: Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.hamburger {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: none;
+  color: var(--butter);
+  border: 1px solid var(--butter);
+  border-radius: 2rem;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.hamburger:hover {
+  border-color: var(--gold);
+}
+
+.hamburger-box {
+  position: relative;
+  width: 1.4rem;
+  height: 1rem;
+}
+
+.hamburger-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--butter);
+  transition: 0.3s;
+}
+
+.line1 {
+  top: 0;
+}
+
+.line2 {
+  top: 7px;
+}
+
+.line3 {
+  top: 14px;
+}
+
+.hamburger[aria-expanded="true"] .line1 {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.hamburger[aria-expanded="true"] .line2 {
+  opacity: 0;
+}
+
+.hamburger[aria-expanded="true"] .line3 {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+@media (max-width: 500px) {
+  .hamburger-label {
+    display: none;
+  }
+
+  .brand-name {
+    font-size: 1.2rem;
+  }
+}

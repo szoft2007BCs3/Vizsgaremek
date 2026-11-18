@@ -1,0 +1,66 @@
+.profile {
+  width: 100%;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.profile-intro {
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+  color: var(--sage-line);
+}
+
+.profile-form {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.field span {
+  font-size: 0.85rem;
+  color: var(--forest);
+}
+
+.field input {
+  padding: 0.65rem 0.9rem;
+  background: var(--cream);
+  color: var(--ink);
+  border: 1px solid var(--moss);
+  border-radius: 0.8rem;
+  font: inherit;
+}
+
+.field input:focus-visible,
+.btn-submit:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.btn-submit {
+  margin-top: 0.3rem;
+  padding: 0.7rem 1rem;
+  background: var(--forest);
+  color: var(--butter);
+  border: 1px solid var(--gold);
+  border-radius: 2rem;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-submit:hover {
+  background: var(--forest-dark);
+}
